@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星語塔羅</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1014; --line:rgba(207,179,122,.26); --gold:#cfb37a; --gold2:#e8d7aa;
+    --text:#e8e3d8; --body:#d4cec2; --muted:#8c877d;
+    --serif:"Cormorant Garamond","Noto Serif TC","Songti TC","PMingLiU",serif;
+    --zh:"Noto Serif TC","Songti TC","PMingLiU","Microsoft JhengHei",serif;
+  }
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{margin:0;min-height:100vh;color:var(--text);font-family:var(--zh);
+    background:radial-gradient(120% 70% at 50% 0%,#1b1e25 0%,var(--bg) 62%);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  main{max-width:960px;margin:0 auto;padding:56px 16px 72px;text-align:center}
+  svg{display:block;width:100%;height:100%}
+
+  /* 標頭 */
+  .eyebrow{font-family:var(--serif);font-size:.78rem;letter-spacing:.45em;color:var(--muted);text-transform:uppercase;padding-left:.45em}
+  h1{font-weight:400;font-size:2.6rem;letter-spacing:.45em;padding-left:.45em;margin:14px 0 0;color:var(--gold2)}
+  .rule{display:flex;align-items:center;gap:14px;width:220px;margin:22px auto 0;color:var(--gold);font-size:.7rem}
+  .rule::before,.rule::after{content:"";flex:1;height:1px;background:var(--line)}
+  .steps{list-style:none;display:flex;justify-content:center;gap:30px;padding:0;margin:28px 0 48px;
+    font-size:.82rem;letter-spacing:.2em;color:#5f5b53}
+  .steps li{transition:color .4s}
+  .steps li span{font-family:var(--serif);margin-right:6px}
+  .steps li.on{color:var(--gold2)}
+
+  .screen{display:none}
+  .screen.active{display:block;animation:rise .8s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  /* 提問 */
+  .ask{max-width:520px;margin:0 auto}
+  .lead{color:var(--muted);line-height:2.1;margin:0 0 30px;font-size:.95rem}
+  textarea{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--text);
+    font:1.15rem/1.8 var(--zh);text-align:center;padding:10px 4px;resize:none;outline:none;transition:border-color .3s}
+  textarea::placeholder{color:#57534c}
+  textarea:focus{border-bottom-color:var(--gold)}
+  .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:18px}
+  .chip{background:none;border:1px solid rgba(207,179,122,.16);color:var(--muted);font:.8rem var(--zh);
+    padding:6px 12px;border-radius:999px;cursor:pointer;transition:color .3s,border-color .3s}
+  .chip:hover{color:var(--gold2);border-color:var(--gold)}
+  .hint{min-height:1.5em;margin:16px 0 0;font-size:.88rem;color:var(--gold)}
+  .btn{margin-top:22px;background:transparent;color:var(--gold2);border:1px solid var(--gold);
+    padding:13px 42px 13px calc(42px + .4em);font:1rem var(--zh);letter-spacing:.4em;cursor:pointer;
+    transition:background .3s,color .3s}
+  .btn:hover{background:var(--gold);color:var(--bg)}
+
+  /* 抽牌 */
+  .qlabel{font-size:.75rem;letter-spacing:.35em;color:var(--muted);margin-bottom:10px}
+  .q{font-size:1.15rem;color:var(--gold2);margin:0;line-height:1.8}
+  .tip{color:var(--muted);font-size:.9rem;letter-spacing:.08em;min-height:1.6em;margin:22px 0 0}
+  .fan{position:relative;width:100%;margin:8px auto 0;transition:height .6s ease,opacity .5s}
+  .fan.gone{opacity:0}
+  .pick{position:absolute;transition:transform .9s cubic-bezier(.2,.8,.2,1),opacity .45s}
+  .pick-inner{width:100%;height:100%;transition:transform .3s ease;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+  .fan.ready .pick{cursor:pointer}
+  .fan.ready .pick:hover .pick-inner{transform:translateY(-16px)}
+  .pick.taken{opacity:0;pointer-events:none}
+  .pick.taken .pick-inner{transform:translateY(-50px)}
+  .shuffling .pick:nth-child(odd) .pick-inner{animation:rl .55s ease-in-out 3}
+  .shuffling .pick:nth-child(even) .pick-inner{animation:rr .55s ease-in-out 3}
+  @keyframes rl{50%{transform:translateX(-46px) rotate(-5deg)}}
+  @keyframes rr{50%{transform:translateX(46px) rotate(5deg)}}
+
+  .slots{display:flex;justify-content:center;gap:clamp(12px,4vw,44px);margin-top:14px}
+  .slot{width:min(160px,calc((100vw - 64px)/3))}
+  .lab{font-family:var(--serif);font-size:.78rem;letter-spacing:.3em;color:var(--muted);margin-bottom:10px}
+  .lab b{display:block;font-family:var(--zh);font-weight:400;font-size:.95rem;color:var(--gold2);margin-top:2px}
+  .frame{aspect-ratio:200/340;border:1px dashed var(--line);border-radius:8px;perspective:1000px}
+  .frame.filled{border-color:transparent}
+  .flip{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 1s cubic-bezier(.3,.7,.2,1);cursor:pointer;animation:land .5s ease}
+  @keyframes land{from{opacity:0;transform:translateY(-30px)}}
+  .flip.flipped{transform:rotateY(180deg);cursor:default}
+  .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
+  .front{transform:rotateY(180deg)}
+  .rev svg{transform:rotate(180deg)}
+  .orient{margin-top:12px;font-size:.8rem;letter-spacing:.35em;color:var(--gold);min-height:1.3em}
+
+  /* 解讀 */
+  .readings{max-width:680px;margin:56px auto 0;text-align:left}
+  .cat{text-align:center;font-size:.8rem;letter-spacing:.3em;color:var(--muted);margin-bottom:26px}
+  .cat b{color:var(--gold2);font-weight:400}
+  .reading{display:grid;grid-template-columns:84px 1fr;gap:26px;padding:34px 0;border-top:1px solid var(--line);animation:rise .9s ease both}
+  .thumb{width:84px}
+  .pos{font-family:var(--serif);font-size:.78rem;letter-spacing:.32em;color:var(--muted);text-transform:uppercase}
+  .reading h3{font-weight:400;font-size:1.45rem;letter-spacing:.12em;margin:6px 0 6px;color:var(--gold2)}
+  .en{font-family:var(--serif);font-style:italic;font-size:1rem;letter-spacing:.03em;color:var(--muted);margin-left:10px}
+  .tag{font-size:.7rem;letter-spacing:.2em;border:1px solid var(--line);padding:2px 8px;margin-left:10px;vertical-align:middle;color:var(--gold)}
+  .kw{font-size:.84rem;color:var(--muted);letter-spacing:.12em;margin-bottom:18px}
+  .reading p,.summary p{line-height:2.05;margin:0 0 14px;font-size:.98rem;color:var(--body)}
+  .reading p.story{color:#aea89c;border-left:1px solid var(--gold);padding-left:16px}
+  .reading p.reflect{color:var(--gold2);font-size:.92rem;margin:0}
+  .summary{border-top:1px solid var(--gold);padding:44px 0 8px;animation:rise .9s ease both}
+  .summary h3{text-align:center;font-weight:400;font-size:1.35rem;letter-spacing:.4em;color:var(--gold2);margin:0 0 6px}
+  .summary .sub{text-align:center;font-family:var(--serif);font-style:italic;color:var(--muted);margin-bottom:28px}
+  .summary .advice{border:1px solid var(--line);padding:18px 22px;margin:22px 0}
+  .summary .advice b{display:block;font-weight:400;font-size:.78rem;letter-spacing:.3em;color:var(--gold);margin-bottom:6px}
+  .reading .inq{background:rgba(207,179,122,.06);padding:14px 18px;margin-top:4px}
+  .reading .inq b,.sec-title{display:block;font-weight:400;font-size:.76rem;letter-spacing:.3em;color:var(--gold);margin-bottom:6px}
+  .energy{font-size:.72rem;letter-spacing:.15em;color:var(--muted);margin-left:8px;vertical-align:middle}
+  .verdict{border:1px solid var(--gold);padding:24px 26px;margin:6px 0 34px;text-align:center}
+  .verdict .lvl{font-size:1.25rem;letter-spacing:.3em;color:var(--gold2);margin:8px 0 4px}
+  .meter{display:flex;justify-content:center;gap:6px;margin:10px 0 14px}
+  .meter i{width:30px;height:3px;background:rgba(207,179,122,.18)}
+  .meter i.on{background:var(--gold)}
+  .verdict p{margin:0!important;color:var(--text)!important;font-size:1.05rem!important}
+  .sec{margin:0 0 30px}
+  .why{list-style:none;padding:0;margin:0}
+  .why li{padding:12px 0;border-bottom:1px solid rgba(207,179,122,.12);line-height:1.95;color:var(--body);font-size:.96rem}
+  .why li b{display:block;font-weight:400;color:var(--gold2);font-size:.9rem;letter-spacing:.08em}
+  .flow svg{width:100%;max-width:360px;height:auto;margin:6px auto 12px}
+  .todo{padding-left:1.2em;margin:0;color:var(--body);line-height:2}
+  .method{font-size:.8rem!important;color:var(--muted)!important;line-height:1.9!important;border-top:1px solid rgba(207,179,122,.12);padding-top:14px}
+  .quote{text-align:center;color:var(--gold2)!important;font-size:1.05rem!important;margin:30px 0 0!important}
+  .again{text-align:center}
+  footer{margin-top:64px;font-size:.78rem;letter-spacing:.15em;color:#5f5b53}
+
+  @media (max-width:560px){
+    main{padding-top:40px}
+    h1{font-size:2rem}
+    .steps{gap:14px;font-size:.72rem;margin-bottom:36px}
+    .reading{grid-template-columns:56px 1fr;gap:16px}
+    .thumb{width:56px}
+    .reading h3{font-size:1.25rem}
+    .en{display:block;margin:2px 0 0}
+    .tag{margin-left:0}
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Star Whisper · Tarot</div>
+  <h1>星語塔羅</h1>
+  <div class="rule">✦</div>
+  <ol class="steps" id="steps">
+    <li class="on"><span>I</span>提問</li><li><span>II</span>抽牌</li><li><span>III</span>翻牌</li><li><span>IV</span>解讀</li>
+  </ol>
+
+  <section id="screen-ask" class="screen active">
+    <div class="ask">
+      <p class="lead">找一個安靜的片刻，深呼吸。<br>把心裡最在意的那件事，寫成一個問題。</p>
+      <textarea id="question" rows="2" placeholder="寫下你的問題……"></textarea>
+      <div class="chips" id="chips"></div>
+      <div class="hint" id="ask-hint"></div>
+      <button class="btn" id="btn-start">開始占卜</button>
+    </div>
+  </section>
+
+  <section id="screen-draw" class="screen">
+    <div class="qlabel">你的問題</div>
+    <p class="q" id="q-show"></p>
+    <p class="tip" id="tip"></p>
+    <div class="fan" id="fan"></div>
+    <div class="slots" id="slots"></div>
+    <div class="readings" id="readings"></div>
+  </section>
+
+  <footer>塔羅是陪你整理心情的小工具，最終的答案，始終在你心裡。</footer>
+</main>
+
+<script>
+/* ================= 色彩與繪圖工具 ================= */
+const C={P:'#f3ead6',K:'#2b2420',Y:'#d9a441',Yl:'#f0dc9c',R:'#b0472f',B:'#45657e',Bl:'#b9ced2',G:'#7e9160',Gl:'#b9c58f',
+  W:'#fbf7ee',Gr:'#9b948b',S:'#efd6b4',Br:'#9c6f45',N:'#2f3b52',Pu:'#7b5f86'};
+const FONT='Cormorant Garamond, Noto Serif TC, serif';
+const f=n=>+n.toFixed(1);
+const H=(x,y,r=7)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${C.S}"/>`;
+const BG=c=>`<rect x="18" y="48" width="164" height="236" fill="${c}" stroke="none"/>`;
+function rays(x,y,r1,r2,n,col=C.K,w=1.3){let s='';for(let i=0;i<n;i++){const a=i*2*Math.PI/n;
+  s+=`<line x1="${f(x+Math.cos(a)*r1)}" y1="${f(y+Math.sin(a)*r1)}" x2="${f(x+Math.cos(a)*r2)}" y2="${f(y+Math.sin(a)*r2)}" stroke="${col}" stroke-width="${w}"/>`;}return s;}
+const SUN=(x,y,r,n=12)=>rays(x,y,r+3,r+10,n)+`<circle cx="${x}" cy="${y}" r="${r}" fill="${C.Y}"/>`;
+function STAR(x,y,r,p=5,k=.45,fill=C.Y,rot=-90){const pts=[];for(let i=0;i<p*2;i++){const rr=i%2?r*k:r,a=(rot+i*180/p)*Math.PI/180;
+  pts.push(f(x+Math.cos(a)*rr)+','+f(y+Math.sin(a)*rr));}return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`;}
+const INF=(x,y,w=11)=>`<path d="M${x} ${y} C${x-w*.4} ${y-w*.6} ${x-w} ${y-w*.6} ${x-w} ${y} C${x-w} ${y+w*.6} ${x-w*.4} ${y+w*.6} ${x} ${y} C${x+w*.4} ${y-w*.6} ${x+w} ${y-w*.6} ${x+w} ${y} C${x+w} ${y+w*.6} ${x+w*.4} ${y+w*.6} ${x} ${y}Z" fill="none" stroke-width="1.8"/>`;
+function CLOUD(x,y,s=1){const c=[[-12,2,8],[0,-4,10],[12,2,8],[0,5,8]];
+  return c.map(([a,b,r])=>`<circle cx="${x+a*s}" cy="${y+b*s}" r="${r*s}" fill="${C.W}"/>`).join('')+
+         c.map(([a,b,r])=>`<circle cx="${x+a*s}" cy="${y+b*s}" r="${r*s-1}" fill="${C.W}" stroke="none"/>`).join('');}
+const LIMB=(d,col,w=4)=>`<path d="${d}" fill="none" stroke="${C.K}" stroke-width="${w+2.2}"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}"/>`;
+function ROSE(x,y,r,col=C.W){let s='';for(let i=0;i<5;i++){const a=(i*72-90)*Math.PI/180;s+=`<circle cx="${f(x+Math.cos(a)*r*.6)}" cy="${f(y+Math.sin(a)*r*.6)}" r="${f(r*.55)}" fill="${col}"/>`;}
+  return s+`<circle cx="${x}" cy="${y}" r="${f(r*.35)}" fill="${C.Y}"/>`;}
+const TXT=(x,y,t,size=12,fill=C.K)=>`<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" stroke="none" text-anchor="middle" font-family="${FONT}">${t}</text>`;
+const mirror=s=>`<g transform="translate(200 0) scale(-1 1)">${s}</g>`;
+
+/* ================= 22 張牌面插畫 ================= */
+const SCENES=[
+/* 0 愚者 */
+BG(C.Yl)+SUN(150,78,13)+
+`<path d="M18 205 L45 160 L62 182 L92 140 L122 186 L148 165 L182 200 L182 284 L18 284Z" fill="#dfe2d6"/>
+<path d="M18 284 L18 236 Q80 222 140 236 L146 284Z" fill="#c9b07e"/>
+<ellipse cx="62" cy="222" rx="11" ry="6" fill="${C.W}"/><circle cx="72" cy="213" r="5" fill="${C.W}"/>
+<path d="M55 227 L52 236 M68 227 L70 236 M51 220 Q45 214 48 207" fill="none"/>`+
+LIMB('M96 190 L92 233','#e9dcc0',3.5)+LIMB('M106 190 L116 230','#e9dcc0',3.5)+
+`<path d="M86 140 Q100 134 114 140 L121 192 L79 192Z" fill="${C.R}"/>
+<circle cx="94" cy="160" r="3" fill="${C.Y}"/><circle cx="106" cy="172" r="3" fill="${C.Y}"/><circle cx="96" cy="182" r="3" fill="${C.Y}"/>
+<path d="M82 168 L118 168" stroke-width="2.4"/>
+<line x1="84" y1="184" x2="132" y2="114" stroke="${C.Br}" stroke-width="2.6"/><circle cx="134" cy="110" r="8" fill="${C.Y}"/>`+
+LIMB('M112 146 L104 154',C.S,3)+LIMB('M88 146 L73 160',C.S,3)+ROSE(70,162,5)+H(100,127,8)+
+`<path d="M91 122 Q100 111 109 122Z" fill="${C.Y}"/><path d="M106 117 Q116 104 124 107 Q114 111 108 120Z" fill="${C.R}"/>`,
+
+/* I 魔術師 */
+BG(C.Yl)+[26,42,58,74,90,106,122,138,154,170].map((x,i)=>`<circle cx="${x}" cy="58" r="6" fill="${i%2?C.G:C.R}"/>`).join('')+
+INF(100,78)+
+`<path d="M80 110 Q100 104 120 110 L134 210 L66 210Z" fill="${C.R}"/><path d="M92 110 L108 110 L112 210 L88 210Z" fill="${C.W}"/>
+<path d="M86 150 L114 150" stroke="${C.Y}" stroke-width="3"/>`+
+LIMB('M110 116 L126 88',C.W,3.5)+`<line x1="124" y1="96" x2="132" y2="62" stroke="${C.K}" stroke-width="5"/><line x1="124" y1="96" x2="132" y2="62" stroke="${C.W}" stroke-width="2.6"/>`+
+LIMB('M90 118 L72 150',C.W,3.5)+H(100,96,8)+`<path d="M92 92 L108 92" stroke="${C.W}" stroke-width="2"/>
+<rect x="26" y="196" width="148" height="12" fill="#c49660"/><rect x="32" y="208" width="136" height="46" fill="#a87a4a"/>
+<path d="M40 170 L60 170 Q60 184 50 184 Q40 184 40 170Z" fill="${C.Y}"/><path d="M50 184 L50 191 M44 196 L56 196 L50 190Z" fill="${C.Y}"/>
+<circle cx="80" cy="189" r="7" fill="${C.Y}"/>`+STAR(80,189,5,5,.4,'none')+
+`<line x1="104" y1="192" x2="148" y2="192" stroke="${C.K}" stroke-width="4.5"/><line x1="104" y1="192" x2="148" y2="192" stroke="#dcd8d0" stroke-width="2.4"/>
+<line x1="110" y1="186" x2="110" y2="198" stroke="${C.Y}" stroke-width="3"/>
+<line x1="152" y1="178" x2="168" y2="194" stroke="${C.Br}" stroke-width="3.4"/>
+<rect x="18" y="254" width="164" height="30" fill="${C.Gl}"/>`+
+[30,52,74,126,148,170].map((x,i)=>i%2?ROSE(x,268,7,C.R):ROSE(x,268,7)).join(''),
+
+/* II 女祭司 */
+BG('#d8ccb0')+`<rect x="18" y="262" width="164" height="22" fill="#c4b795"/>
+<rect x="46" y="48" width="108" height="214" fill="#9fb084"/>`+
+[[60,64],[84,74],[116,70],[140,62],[56,96],[144,96],[58,130],[142,132],[60,170],[142,168],[56,210],[144,212]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4.5" fill="${C.R}"/>`).join('')+
+`<rect x="20" y="62" width="24" height="200" fill="${C.K}"/><rect x="16" y="56" width="32" height="10" fill="${C.K}"/>
+<rect x="156" y="62" width="24" height="200" fill="${C.W}"/><rect x="152" y="56" width="32" height="10" fill="${C.W}"/>`+
+TXT(32,124,'B',16,'#fff')+TXT(168,124,'J',16,C.K)+
+`<path d="M76 118 Q100 110 124 118 L142 262 L58 262Z" fill="${C.B}"/><path d="M95 118 L105 118 L108 200 L92 200Z" fill="${C.W}"/>
+<path d="M100 128 L100 146 M93 136 L107 136"/>
+<path d="M87 108 Q87 90 100 90 Q113 90 113 108 L115 124 L85 124Z" fill="${C.W}"/>`+H(100,104,8)+
+`<circle cx="100" cy="80" r="5.5" fill="${C.W}"/><path d="M86 84 Q88 72 94 80 M114 84 Q112 72 106 80" fill="none" stroke-width="1.8"/>
+<rect x="80" y="166" width="28" height="12" rx="5" fill="${C.W}" transform="rotate(-15 94 172)"/>
+<path d="M66 276 Q100 252 134 276 Q100 266 66 276Z" fill="${C.Y}"/>`,
+
+/* III 皇后 */
+BG(C.Yl)+`<ellipse cx="34" cy="120" rx="13" ry="42" fill="#5d7048"/><ellipse cx="166" cy="116" rx="13" ry="44" fill="#5d7048"/><ellipse cx="150" cy="140" rx="11" ry="34" fill="#6f8457"/>
+<path d="M24 150 L40 150 L46 242 L20 242Z" fill="${C.Bl}"/>
+<rect x="56" y="122" width="88" height="112" rx="14" fill="${C.R}"/>
+<path d="M74 114 Q100 106 126 114 L146 238 L54 238Z" fill="${C.W}"/>`+
+[[86,140],[110,150],[92,176],[118,190],[80,210],[104,214],[128,222]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3" fill="${C.R}"/>`).join('')+
+H(100,100,8)+`<path d="M92 98 Q90 112 86 118 M108 98 Q110 112 114 118" fill="none" stroke="${C.Y}" stroke-width="3"/>`+
+[200,215,230,245,260,275,290,305,320,335].map(a=>{const r=a*Math.PI/180;return STAR(f(100+Math.cos(r)*17),f(98+Math.sin(r)*17),3,5,.45);}).join('')+
+`<line x1="128" y1="154" x2="136" y2="106" stroke="${C.Y}" stroke-width="2.6"/><circle cx="137" cy="102" r="4.5" fill="${C.Y}"/>
+<rect x="18" y="242" width="164" height="42" fill="#d8b45c"/>`+
+Array.from({length:21},(_,i)=>{const x=22+i*8;return `<line x1="${x}" y1="284" x2="${x+2}" y2="252" stroke="#a5813a"/><ellipse cx="${x+2}" cy="250" rx="2.2" ry="5" fill="${C.Y}"/>`;}).join('')+
+`<path d="M62 238 Q42 222 49 209 Q56 200 62 211 Q68 200 75 209 Q82 222 62 238Z" fill="#d9a79a"/>
+<circle cx="62" cy="215" r="4" fill="none"/><path d="M62 219 L62 227 M58 223 L66 223"/>`,
+
+/* IV 皇帝 */
+BG('#e7a663')+`<path d="M18 230 L34 150 L52 180 L72 118 L92 168 L112 130 L134 176 L156 120 L182 190 L182 284 L18 284Z" fill="#b7643f"/>
+<rect x="52" y="94" width="96" height="174" fill="#aaa398"/>
+<circle cx="58" cy="100" r="9" fill="#cbc4b8"/><path d="M58 100 m-4 0 a4 4 0 1 1 4 4" fill="none"/>
+<circle cx="142" cy="100" r="9" fill="#cbc4b8"/><path d="M142 100 m4 0 a4 4 0 1 0 -4 4" fill="none"/>
+<path d="M70 120 Q100 112 130 120 L146 262 L54 262Z" fill="${C.R}"/>
+<path d="M82 236 L94 236 L94 262 L80 262Z M106 236 L118 236 L120 262 L106 262Z" fill="${C.Gr}"/>`+
+H(100,104,8)+`<path d="M92 106 Q100 134 108 106 Q100 113 92 106Z" fill="${C.W}"/>
+<path d="M90 98 L90 86 L95 91 L100 82 L105 91 L110 86 L110 98Z" fill="${C.Y}"/>
+<line x1="134" y1="172" x2="134" y2="116" stroke="${C.Y}" stroke-width="3"/><ellipse cx="134" cy="108" rx="5" ry="7" fill="none" stroke="${C.Y}" stroke-width="2.6"/>
+<line x1="127" y1="117" x2="141" y2="117" stroke="${C.Y}" stroke-width="2.6"/>
+<circle cx="64" cy="172" r="7" fill="${C.Y}"/><path d="M64 160 L64 166 M61 163 L67 163"/>
+<rect x="18" y="268" width="164" height="16" fill="#8e5a3c"/>`,
+
+/* V 教皇 */
+BG('#d5cdbf')+`<rect x="22" y="56" width="26" height="228" fill="#a39c92"/><rect x="152" y="56" width="26" height="228" fill="#a39c92"/>
+<rect x="40" y="232" width="120" height="52" fill="#bdb4a6"/>
+<path d="M70 124 Q100 116 130 124 L144 236 L56 236Z" fill="${C.R}"/><path d="M94 124 L106 124 L110 236 L90 236Z" fill="${C.W}"/>
+<path d="M100 150 L100 162 M95 156 L105 156 M100 190 L100 202 M95 196 L105 196"/>`+
+H(100,110,8)+`<path d="M90 104 L92 78 Q100 62 108 78 L110 104Z" fill="${C.Y}"/><path d="M91 96 L109 96 M92 87 L108 87"/>`+
+LIMB('M114 134 L124 114',C.W,3.5)+`<path d="M124 114 L124 104 M127 114 L128 106"/>
+<line x1="72" y1="236" x2="72" y2="94" stroke="${C.Y}" stroke-width="2.6"/>
+<path d="M66 104 L78 104 M64 112 L80 112 M62 120 L82 120" stroke="${C.Y}" stroke-width="2.4"/>
+<line x1="86" y1="240" x2="114" y2="262" stroke="${C.Y}" stroke-width="3"/><line x1="114" y1="240" x2="86" y2="262" stroke="${C.Y}" stroke-width="3"/>
+<circle cx="86" cy="240" r="4" fill="${C.Y}"/><circle cx="114" cy="240" r="4" fill="${C.Y}"/>
+<path d="M44 284 Q44 260 64 256 Q84 260 84 284Z" fill="${C.R}"/><circle cx="64" cy="250" r="8" fill="#8b6a4a"/>
+<path d="M116 284 Q116 260 136 256 Q156 260 156 284Z" fill="${C.W}"/><circle cx="136" cy="250" r="8" fill="#8b6a4a"/>
+<circle cx="56" cy="272" r="3" fill="${C.W}"/><circle cx="72" cy="268" r="3" fill="${C.W}"/><circle cx="130" cy="272" r="3" fill="${C.G}"/><circle cx="144" cy="268" r="3" fill="${C.G}"/>`,
+
+/* VI 戀人 */
+BG(C.Bl)+SUN(100,64,13,16)+
+`<path d="M100 104 Q60 66 36 112 Q66 100 100 118Z" fill="${C.R}"/><path d="M100 104 Q140 66 164 112 Q134 100 100 118Z" fill="${C.R}"/>
+<path d="M90 104 L110 104 L116 132 L84 132Z" fill="${C.Pu}"/>`+H(100,96,7)+
+`<path d="M93 90 Q96 82 100 88 Q104 82 107 90" fill="${C.G}"/>`+
+[60,74,88,102,116,130,144].map(x=>`<circle cx="${x}" cy="134" r="9" fill="${C.W}"/>`).join('')+`<rect x="54" y="132" width="96" height="10" fill="${C.W}" stroke="none"/>
+<path d="M100 156 L132 238 L68 238Z" fill="#a7b282"/><rect x="18" y="236" width="164" height="48" fill="${C.Gl}"/>
+<line x1="34" y1="284" x2="34" y2="164" stroke="${C.Br}" stroke-width="3"/>`+
+[[26,168],[42,172],[30,186],[40,198],[28,206],[38,150]].map(([x,y],i)=>`<path d="M${x} ${y+8} Q${x-5} ${y} ${x} ${y-8} Q${x+5} ${y} ${x} ${y+8}Z" fill="${i%2?C.Y:C.R}"/>`).join('')+
+`<line x1="166" y1="284" x2="166" y2="180" stroke="${C.Br}" stroke-width="3"/><circle cx="166" cy="168" r="18" fill="${C.G}"/>
+<circle cx="158" cy="162" r="3" fill="${C.R}"/><circle cx="172" cy="170" r="3" fill="${C.R}"/><circle cx="164" cy="178" r="3" fill="${C.R}"/>
+<path d="M162 240 Q172 230 162 220 Q152 210 164 200" fill="none" stroke="#4d5e3a" stroke-width="2.6"/>
+<path d="M56 194 Q64 190 72 194 L75 254 L53 254Z" fill="${C.W}"/>`+H(64,184,7)+
+`<path d="M136 176 Q126 180 128 204 L144 204 Q146 180 136 176Z" fill="${C.Y}"/>
+<path d="M128 194 Q136 190 144 194 L147 254 L125 254Z" fill="${C.Y}"/>`+H(136,184,7),
+
+/* VII 戰車 */
+BG(C.Yl)+`<path d="M18 178 L18 150 L30 150 L30 138 L42 138 L42 154 L58 154 L58 144 L70 144 L70 160 L130 160 L130 142 L144 142 L144 154 L160 154 L160 136 L172 136 L172 150 L182 150 L182 178Z" fill="#c9c2b0"/>
+<rect x="18" y="178" width="164" height="12" fill="${C.Bl}"/><rect x="18" y="190" width="164" height="94" fill="${C.Gl}"/>
+<line x1="56" y1="92" x2="56" y2="170" stroke-width="3"/><line x1="144" y1="92" x2="144" y2="170" stroke-width="3"/>
+<path d="M46 82 L154 82 L148 96 L52 96Z" fill="${C.B}"/>`+[62,80,100,120,138].map(x=>STAR(x,89,3,5,.45)).join('')+
+`<path d="M84 118 L116 118 L118 166 L82 166Z" fill="${C.Gr}"/><path d="M80 120 Q84 112 90 120 M110 120 Q116 112 120 120" fill="${C.Y}"/>`+
+H(100,106,8)+STAR(100,94,5,8,.45)+
+`<line x1="118" y1="152" x2="132" y2="108" stroke-width="2.6"/>
+<rect x="52" y="160" width="96" height="56" fill="#b9b1a2"/><circle cx="100" cy="180" r="5" fill="${C.Y}"/>
+<path d="M95 180 Q84 172 74 178 Q84 184 95 182 M105 180 Q116 172 126 178 Q116 184 105 182" fill="${C.Y}"/>
+<path d="M100 196 L100 208 M94 202 L106 202" stroke="${C.R}" stroke-width="2"/>
+<circle cx="60" cy="222" r="12" fill="#8a8378"/><circle cx="140" cy="222" r="12" fill="#8a8378"/>
+<path d="M40 268 Q40 244 62 242 L90 246 Q94 268 90 268Z" fill="${C.K}"/><circle cx="52" cy="236" r="10" fill="${C.K}"/><path d="M48 230 L44 246" stroke="#fff"/>
+<path d="M160 268 Q160 244 138 242 L110 246 Q106 268 110 268Z" fill="${C.W}"/><circle cx="148" cy="236" r="10" fill="${C.W}"/><path d="M152 230 L156 246"/>`,
+
+/* VIII 力量 */
+BG(C.Yl)+`<path d="M18 200 L60 150 L100 190 L150 140 L182 180 L182 284 L18 284Z" fill="#a8b9c0"/>
+<path d="M18 284 L18 232 Q100 216 182 232 L182 284Z" fill="${C.G}"/>`+INF(78,72)+
+`<path d="M170 210 Q182 196 176 180 Q186 192 176 214Z" fill="${C.Y}"/>
+<ellipse cx="134" cy="216" rx="40" ry="22" fill="${C.Y}"/>
+<rect x="104" y="226" width="10" height="26" fill="${C.Y}"/><rect x="150" y="226" width="10" height="26" fill="${C.Y}"/>`+
+STAR(104,188,24,14,.78,'#c4802f')+`<circle cx="104" cy="190" r="13" fill="${C.Y}"/>
+<circle cx="99" cy="186" r="1.6" fill="${C.K}"/><circle cx="109" cy="186" r="1.6" fill="${C.K}"/><path d="M98 197 Q104 202 110 197" fill="none"/>
+<path d="M64 104 Q78 98 92 104 L110 252 L48 252Z" fill="${C.W}"/>`+
+[64,72,80,88,96].map((x,i)=>`<circle cx="${x+4}" cy="${140+i*1.5}" r="3" fill="${i%2?C.G:C.R}"/>`).join('')+
+LIMB('M88 118 L100 176',C.W,4)+LIMB('M70 122 L92 198',C.W,4)+`<circle cx="100" cy="178" r="3" fill="${C.S}"/><circle cx="93" cy="199" r="3" fill="${C.S}"/>`+
+H(78,92,8)+`<path d="M70 92 Q70 78 80 80 Q90 80 88 92 Q84 84 78 86 Q72 86 70 92Z" fill="${C.Y}"/>`+
+[70,78,86].map(x=>`<circle cx="${x}" cy="83" r="2.4" fill="${C.R}"/>`).join(''),
+
+/* IX 隱者 */
+BG(C.N)+[[40,70],[70,90],[150,64],[166,100],[50,140],[132,82]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.3" fill="#fff" stroke="none"/>`).join('')+
+`<path d="M18 284 L18 246 L70 196 L108 226 L150 200 L182 222 L182 284Z" fill="#e9e6dd"/>
+<path d="M82 104 Q100 82 118 104 L132 252 L68 252Z" fill="#8e8984"/>
+<path d="M86 114 Q84 88 104 90 Q116 96 114 118Z" fill="#7d7873"/>`+H(99,108,7)+
+`<path d="M93 112 Q97 138 105 112Z" fill="${C.W}"/>
+<line x1="70" y1="124" x2="64" y2="254" stroke="${C.K}" stroke-width="4.6"/><line x1="70" y1="124" x2="64" y2="254" stroke="#c6a36a" stroke-width="2.6"/>`+
+LIMB('M116 128 L140 126','#8e8984',4)+
+`<circle cx="145" cy="144" r="22" fill="#f6e7a8" opacity=".35" stroke="none"/><line x1="141" y1="126" x2="145" y2="132"/>
+<path d="M138 132 L152 132 L155 152 L135 152Z" fill="${C.Y}"/><path d="M136 132 L145 126 L154 132Z" fill="${C.Gr}"/>`+
+STAR(145,142,6,6,.55,C.W),
+
+/* X 命運之輪 */
+BG(C.Bl)+CLOUD(36,72,.9)+CLOUD(164,72,.9)+CLOUD(36,262,.9)+CLOUD(164,262,.9)+
+`<circle cx="36" cy="64" r="6" fill="${C.Y}"/><circle cx="164" cy="64" r="6" fill="${C.Gr}"/><circle cx="36" cy="254" r="6" fill="${C.Br}"/><circle cx="164" cy="254" r="6" fill="#d18b3a"/>
+<circle cx="100" cy="170" r="52" fill="${C.Y}"/><circle cx="100" cy="170" r="38" fill="#efd38a"/><circle cx="100" cy="170" r="15" fill="${C.Bl}"/>`+
+rays(100,170,15,38,8)+TXT(100,128,'T',11)+TXT(145,174,'A',11)+TXT(100,220,'R',11)+TXT(55,174,'O',11)+
+`<path d="M88 118 Q100 110 112 118 L112 112 L88 112Z" fill="${C.B}"/><circle cx="100" cy="106" r="6" fill="${C.B}"/>
+<line x1="110" y1="112" x2="122" y2="94" stroke-width="2"/>
+<path d="M46 116 Q34 136 46 156 Q58 176 46 196 Q36 214 46 232" fill="none" stroke="${C.K}" stroke-width="6"/>
+<path d="M46 116 Q34 136 46 156 Q58 176 46 196 Q36 214 46 232" fill="none" stroke="${C.Y}" stroke-width="3.6"/>
+<path d="M148 238 L146 198 Q148 184 156 186 L162 198 L160 238Z" fill="${C.R}"/><path d="M150 188 L148 172 L154 180 L162 172 L162 188Z" fill="${C.R}"/>`,
+
+/* XI 正義 */
+BG(C.Yl)+`<rect x="46" y="64" width="108" height="220" fill="${C.Pu}"/>
+<rect x="22" y="58" width="24" height="226" fill="${C.Gr}"/><rect x="154" y="58" width="24" height="226" fill="${C.Gr}"/>
+<rect x="18" y="262" width="164" height="22" fill="#bdb4a6"/>
+<path d="M66 116 L134 116 L146 262 L54 262Z" fill="${C.G}"/><path d="M80 116 L120 116 L128 262 L72 262Z" fill="${C.R}"/>`+
+H(100,102,8)+`<path d="M89 96 L89 84 L94 84 L94 88 L98 88 L98 82 L102 82 L102 88 L106 88 L106 84 L111 84 L111 96Z" fill="${C.Y}"/>`+
+LIMB('M116 130 L128 152',C.R,4)+
+`<line x1="128" y1="158" x2="128" y2="64" stroke="${C.K}" stroke-width="5.6"/><line x1="128" y1="158" x2="128" y2="64" stroke="#e1ddd5" stroke-width="3.4"/>
+<line x1="120" y1="150" x2="136" y2="150" stroke="${C.Y}" stroke-width="3.2"/><circle cx="128" cy="160" r="3" fill="${C.Y}"/>`+
+LIMB('M84 130 L72 150',C.R,4)+
+`<line x1="72" y1="152" x2="72" y2="128" stroke="${C.Y}" stroke-width="2.4"/><line x1="54" y1="130" x2="90" y2="130" stroke="${C.Y}" stroke-width="2.4"/>
+<path d="M54 130 L49 150 M54 130 L60 150 M90 130 L85 150 M90 130 L96 150" stroke-width=".9"/>
+<path d="M47 150 Q54 160 62 150Z" fill="${C.Y}"/><path d="M83 150 Q90 160 98 150Z" fill="${C.Y}"/>`,
+
+/* XII 吊人 */
+BG('#cdd6d4')+`<rect x="18" y="262" width="164" height="22" fill="${C.G}"/>
+<rect x="94" y="62" width="12" height="222" fill="${C.Br}"/><rect x="34" y="54" width="132" height="12" fill="${C.Br}"/>`+
+[[44,52],[64,50],[136,50],[156,52],[86,250],[114,240]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="5" ry="3" fill="${C.G}"/>`).join('')+
+`<line x1="100" y1="66" x2="100" y2="80"/>`+
+LIMB('M100 104 L124 120 L104 140',C.R,8)+`<path d="M94 78 L106 78 L107 142 L93 142Z" fill="${C.R}"/>
+<path d="M88 140 L112 140 L118 198 L82 198Z" fill="${C.B}"/><path d="M85 160 L115 160" stroke="${C.Y}" stroke-width="2.6"/>`+
+LIMB('M88 196 L100 174 L112 196',C.B,4)+
+`<circle cx="100" cy="212" r="17" fill="${C.Yl}"/>`+rays(100,212,18,24,12,C.Y,1.6)+H(100,210,9)+
+`<path d="M91 214 Q100 230 109 214 Q100 220 91 214Z" fill="${C.Y}"/>`,
+
+/* XIII 死神 */
+BG('#e9dfc6')+`<circle cx="148" cy="200" r="16" fill="${C.Y}"/>`+rays(148,200,19,26,10,C.Y,1.4)+
+`<rect x="122" y="148" width="13" height="56" fill="${C.Gr}"/><rect x="161" y="148" width="13" height="56" fill="${C.Gr}"/>
+<path d="M122 148 L122 142 L126 142 L126 146 L130 146 L130 142 L135 142 L135 148 M161 148 L161 142 L165 142 L165 146 L169 146 L169 142 L174 142 L174 148" fill="none"/>
+<rect x="18" y="200" width="164" height="16" fill="#c9cfa6"/>
+<path d="M18 216 Q90 202 182 206 L182 224 Q90 224 18 238Z" fill="${C.Bl}"/>
+<path d="M18 238 Q90 224 182 224 L182 284 L18 284Z" fill="${C.G}"/>
+<line x1="58" y1="62" x2="58" y2="278" stroke="${C.K}" stroke-width="4.6"/><line x1="58" y1="62" x2="58" y2="278" stroke="${C.Br}" stroke-width="2.6"/>
+<path d="M60 68 Q90 60 120 68 Q140 74 152 66 L152 142 Q132 148 120 142 Q90 134 60 142Z" fill="${C.K}"/>`+
+ROSE(106,104,17)+`<circle cx="58" cy="60" r="4" fill="${C.Y}"/>`,
+
+/* XIV 節制 */
+BG(C.Bl)+`<rect x="18" y="230" width="164" height="54" fill="${C.G}"/>
+<path d="M118 232 L150 152 L182 232Z" fill="#c2cdb6"/><circle cx="150" cy="140" r="8" fill="${C.Y}"/>`+rays(150,140,10,15,10,C.Y,1.4)+
+`<path d="M112 284 Q130 250 148 210 L154 210 Q142 250 128 284Z" fill="#e6dbbf"/>
+<ellipse cx="56" cy="264" rx="40" ry="14" fill="${C.B}"/>
+<path d="M100 102 Q52 58 28 164 Q68 124 100 132Z" fill="${C.R}"/><path d="M100 102 Q148 58 172 164 Q132 124 100 132Z" fill="${C.R}"/>
+<path d="M78 112 Q100 104 122 112 L132 258 L68 258Z" fill="${C.W}"/><path d="M94 124 L106 124 L100 136Z" fill="${C.Y}"/>`+
+H(100,98,8)+`<path d="M92 96 Q92 86 100 86 Q108 86 108 96 Q104 90 100 92 Q96 90 92 96Z" fill="${C.Y}"/><circle cx="100" cy="92" r="2" fill="${C.Y}"/>`+
+LIMB('M84 120 L76 146',C.W,4)+LIMB('M116 120 L124 178',C.W,4)+
+`<path d="M66 144 L84 144 L80 160 L70 160Z" fill="${C.Y}"/><path d="M114 178 L132 178 L128 194 L118 194Z" fill="${C.Y}"/>
+<path d="M82 148 Q112 158 120 180" fill="none" stroke="${C.B}" stroke-width="3"/>
+<path d="M40 252 L40 236 M52 254 L52 240" stroke="${C.G}" stroke-width="2"/>
+<path d="M40 238 Q34 230 40 222 Q46 230 40 238Z M52 242 Q46 234 52 226 Q58 234 52 242Z" fill="${C.Y}"/>`,
+
+/* XV 惡魔 */
+BG('#1f1d1e')+
+`<path d="M100 122 Q62 70 24 96 Q42 110 38 132 Q58 122 68 142 Q80 128 100 142Z" fill="#5b5550"/>`+mirror(`<path d="M100 122 Q62 70 24 96 Q42 110 38 132 Q58 122 68 142 Q80 128 100 142Z" fill="#5b5550"/>`)+
+STAR(100,64,11,5,.38,'none',90).replace('fill="none"','fill="none" stroke="#e8e3d8"')+
+`<path d="M88 94 Q78 80 84 70 Q88 84 95 90Z" fill="${C.Gr}"/><path d="M112 94 Q122 80 116 70 Q112 84 105 90Z" fill="${C.Gr}"/>
+<path d="M86 108 L114 108 L120 178 L80 178Z" fill="#8a7a68"/><circle cx="100" cy="99" r="10" fill="#8a7a68"/>
+<circle cx="96" cy="98" r="1.4" fill="#e8e3d8" stroke="none"/><circle cx="104" cy="98" r="1.4" fill="#e8e3d8" stroke="none"/>`+
+LIMB('M114 116 L126 98','#8a7a68',4)+LIMB('M86 120 L72 152','#8a7a68',4)+
+`<line x1="72" y1="152" x2="64" y2="184" stroke="${C.Br}" stroke-width="3"/><path d="M58 184 Q64 202 70 184 Q64 190 58 184Z" fill="${C.R}"/>
+<rect x="74" y="178" width="52" height="34" fill="#5b5550"/><circle cx="100" cy="196" r="5" fill="none" stroke="${C.Gr}" stroke-width="2"/>
+<path d="M96 200 Q80 218 64 228 M104 200 Q120 218 136 228" fill="none" stroke="${C.Gr}" stroke-width="2" stroke-dasharray="3 2"/>
+<rect x="18" y="270" width="164" height="14" fill="#3a3436"/>
+<path d="M56 234 Q62 230 68 234 L70 270 L54 270Z" fill="${C.S}"/>`+H(62,226,6)+
+`<path d="M54 262 Q44 258 46 248" fill="none" stroke="${C.R}" stroke-width="2"/>
+<path d="M132 234 Q138 230 144 234 L146 270 L130 270Z" fill="${C.S}"/>`+H(138,226,6)+
+`<circle cx="152" cy="252" r="2.4" fill="${C.Pu}"/><circle cx="155" cy="257" r="2.4" fill="${C.Pu}"/><circle cx="150" cy="258" r="2.4" fill="${C.Pu}"/>`,
+
+/* XVI 高塔 */
+BG('#2c3140')+`<path d="M38 50 L72 92 L60 96 L96 128 L84 132 L114 162 L76 126 L88 122 L50 94 L62 90Z" fill="${C.Y}"/>`+
+[[40,120],[150,70],[164,130],[34,170],[60,64],[140,150],[166,200],[30,214]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.4" fill="${C.Y}" stroke="none"/>`).join('')+
+`<path d="M18 284 L18 256 Q46 236 70 236 L130 236 Q156 238 182 256 L182 284Z" fill="#7b766f"/>
+<rect x="78" y="100" width="44" height="140" fill="#c2bab0"/>
+<path d="M78 130 L122 130 M78 170 L122 170 M78 210 L122 210" stroke-width=".8"/>
+<path d="M76 100 L76 92 L84 92 L84 96 L92 96 L92 92 L100 92 L100 96 L108 96 L108 92 L116 92 L116 96 L124 96 L124 100Z" fill="#c2bab0"/>
+<path d="M78 98 Q84 78 92 88 Q96 70 104 86 Q112 72 116 88 Q122 80 122 98Z" fill="${C.R}"/><path d="M88 96 Q94 84 100 92 Q106 82 112 96Z" fill="${C.Y}"/>
+<rect x="92" y="142" width="16" height="22" fill="#2c3140"/><path d="M94 164 Q100 140 106 164Z" fill="${C.R}"/><path d="M97 164 Q100 152 103 164Z" fill="${C.Y}"/>
+<rect x="84" y="186" width="10" height="14" fill="#2c3140"/><rect x="106" y="186" width="10" height="14" fill="#2c3140"/>
+<g transform="rotate(28 134 86)"><path d="M122 92 L122 80 L128 86 L134 76 L140 86 L146 80 L146 92Z" fill="${C.Y}"/></g>
+<g transform="rotate(150 56 176)"><rect x="52" y="168" width="8" height="18" fill="${C.R}"/>${H(56,164,5)}</g>
+<g transform="rotate(-160 146 200)"><rect x="142" y="192" width="8" height="18" fill="${C.B}"/>${H(146,188,5)}</g>`,
+
+/* XVII 星星 */
+BG(C.N)+STAR(100,82,21,8,.42)+
+[[40,64],[160,64],[34,108],[166,108],[52,148],[148,148],[100,130]].map(([x,y])=>STAR(x,y,7,8,.42,C.W)).join('')+
+`<path d="M120 284 L120 204 Q150 180 182 192 L182 284Z" fill="${C.G}"/>
+<line x1="160" y1="194" x2="160" y2="156"/><ellipse cx="160" cy="150" rx="13" ry="11" fill="#5d7048"/>
+<path d="M154 140 Q158 134 164 138 L168 136 L166 140 Q160 144 154 140Z" fill="${C.K}"/>
+<path d="M18 230 Q60 218 124 226 L124 284 L18 284Z" fill="${C.Gl}"/><ellipse cx="62" cy="264" rx="42" ry="16" fill="${C.B}"/>
+<path d="M88 222 L124 222 L126 236 L84 238Z" fill="${C.W}"/>
+<path d="M92 192 Q100 186 108 192 L112 224 L88 224Z" fill="${C.W}"/>`+
+LIMB('M92 198 L76 222',C.S,3.5)+LIMB('M108 198 L128 220',C.S,3.5)+
+`<path d="M68 220 Q64 232 72 236 Q80 232 78 220Z" fill="${C.Y}"/><path d="M71 236 L66 254" stroke="${C.W}" stroke-width="2"/>
+<path d="M126 220 Q122 232 130 236 Q138 232 136 220Z" fill="${C.Y}"/><path d="M132 236 L138 250 M132 236 L146 246" stroke="${C.W}" stroke-width="2"/>`+
+H(100,180,8)+`<path d="M92 178 Q90 196 86 204 M108 178 Q110 196 114 204" fill="none" stroke="${C.Y}" stroke-width="3"/>`,
+
+/* XVIII 月亮 */
+BG('#344260')+rays(100,86,28,38,16,C.Yl,1.4)+
+`<circle cx="100" cy="86" r="24" fill="${C.Y}"/><path d="M100 62 A24 24 0 0 1 100 110 A15 24 0 0 0 100 62Z" fill="#f3e2a6"/>
+<path d="M88 80 L95 80 M90 96 Q94 99 98 96" fill="none"/>`+
+[[74,126],[92,132],[110,128],[128,134]].map(([x,y])=>`<path d="M${x} ${y-5} Q${x+4} ${y+2} ${x} ${y+4} Q${x-4} ${y+2} ${x} ${y-5}Z" fill="${C.Y}"/>`).join('')+
+`<path d="M18 200 L60 166 L100 196 L140 166 L182 200 L182 284 L18 284Z" fill="#5e6b84"/>
+<rect x="26" y="150" width="22" height="80" fill="${C.Gr}"/><rect x="152" y="150" width="22" height="80" fill="${C.Gr}"/>
+<rect x="34" y="164" width="6" height="10" fill="#344260"/><rect x="160" y="164" width="6" height="10" fill="#344260"/>
+<rect x="18" y="226" width="164" height="58" fill="#6d8a5a"/>
+<path d="M96 284 Q80 252 104 232 Q120 214 100 198 L104 198 Q126 214 110 234 Q92 254 112 284Z" fill="#e4d8b8"/>
+<ellipse cx="56" cy="242" rx="13" ry="7" fill="#c9a06a"/><circle cx="64" cy="230" r="6" fill="#c9a06a"/><path d="M66 226 L74 218 L70 230Z" fill="#c9a06a"/><path d="M60 226 L58 218 L64 224Z" fill="#c9a06a"/>
+<ellipse cx="144" cy="242" rx="13" ry="7" fill="${C.Gr}"/><circle cx="136" cy="230" r="6" fill="${C.Gr}"/><path d="M134 226 L126 218 L130 230Z" fill="${C.Gr}"/><path d="M140 226 L142 218 L136 224Z" fill="${C.Gr}"/>
+<path d="M46 284 Q100 252 154 284Z" fill="${C.B}"/>
+<ellipse cx="100" cy="274" rx="6" ry="4" fill="${C.R}"/><path d="M95 271 Q90 264 94 260 M105 271 Q110 264 106 260" fill="none" stroke="${C.R}" stroke-width="2"/>`,
+
+/* XIX 太陽 */
+BG(C.Yl)+rays(100,94,34,52,20,C.Y,2.4)+
+`<circle cx="100" cy="94" r="30" fill="${C.Y}"/><circle cx="90" cy="88" r="2.2" fill="${C.K}"/><circle cx="110" cy="88" r="2.2" fill="${C.K}"/>
+<path d="M89 102 Q100 112 111 102" fill="none" stroke-width="1.6"/>
+<rect x="18" y="198" width="164" height="36" fill="#bdb4a6"/><path d="M18 210 L182 210 M18 222 L182 222 M40 198 L40 210 M80 198 L80 210 M120 198 L120 210 M160 198 L160 210 M60 210 L60 222 M100 210 L100 222 M140 210 L140 222" stroke-width=".8"/>`+
+[34,62,138,166].map(x=>`<line x1="${x}" y1="198" x2="${x}" y2="186" stroke="${C.G}" stroke-width="2"/><circle cx="${x}" cy="182" r="9" fill="${C.Y}"/>`+STAR(x,182,10,10,.6,C.Y)+`<circle cx="${x}" cy="182" r="4" fill="${C.Br}"/>`).join('')+
+`<rect x="18" y="234" width="164" height="50" fill="${C.Gl}"/>
+<line x1="80" y1="244" x2="70" y2="184" stroke="${C.Br}" stroke-width="2.4"/><path d="M71 186 Q48 190 36 206 Q56 204 74 214Z" fill="${C.R}"/>`+
+LIMB('M76 262 L74 282',C.W,3)+LIMB('M88 262 L90 282',C.W,3)+LIMB('M112 262 L110 282',C.W,3)+LIMB('M122 262 L126 282',C.W,3)+
+`<ellipse cx="100" cy="254" rx="34" ry="13" fill="${C.W}"/><path d="M124 248 L138 224 L152 228 L146 236 L134 256Z" fill="${C.W}"/>
+<path d="M94 228 L106 228 L108 248 L92 248Z" fill="${C.S}"/>`+LIMB('M95 232 L80 218',C.S,3)+LIMB('M105 232 L120 218',C.S,3)+H(100,220,7)+
+`<circle cx="94" cy="214" r="2" fill="${C.Y}"/><circle cx="100" cy="212" r="2" fill="${C.R}"/><circle cx="106" cy="214" r="2" fill="${C.Y}"/>
+<path d="M104 212 Q112 200 118 202 Q110 206 106 214Z" fill="${C.R}"/>`,
+
+/* XX 審判 */
+BG(C.Bl)+`<path d="M18 198 L46 160 L74 190 L100 156 L130 192 L160 162 L182 186 L182 284 L18 284Z" fill="#e3e7ea"/>
+<rect x="18" y="222" width="164" height="62" fill="${C.B}"/>
+<path d="M100 84 Q60 52 34 96 Q68 86 100 100Z" fill="${C.R}"/><path d="M100 84 Q140 52 166 96 Q132 86 100 100Z" fill="${C.R}"/>
+<path d="M90 86 L110 86 L114 118 L86 118Z" fill="${C.W}"/>`+H(100,76,7)+`<path d="M93 74 Q94 64 100 66 Q106 64 107 74 Q100 68 93 74Z" fill="${C.Y}"/>
+<line x1="106" y1="90" x2="140" y2="124" stroke="${C.K}" stroke-width="4.6"/><line x1="106" y1="90" x2="140" y2="124" stroke="${C.Y}" stroke-width="2.6"/>
+<path d="M136 126 L150 116 L148 134Z" fill="${C.Y}"/>
+<path d="M116 104 L130 118 L124 134 L110 120Z" fill="${C.W}"/><path d="M120 112 L120 126 M114 119 L126 119" stroke="${C.R}" stroke-width="2"/>`+
+[46,62,78,94,110,126,142,158].map(x=>`<circle cx="${x}" cy="126" r="9" fill="${C.W}"/>`).join('')+`<rect x="40" y="124" width="124" height="10" fill="${C.W}" stroke="none"/>
+<rect x="34" y="250" width="40" height="14" fill="#7b766f"/><rect x="82" y="254" width="36" height="12" fill="#7b766f"/><rect x="126" y="250" width="40" height="14" fill="#7b766f"/>
+<path d="M46 232 L62 232 L64 252 L44 252Z" fill="#d4cfc6"/>`+LIMB('M48 234 L40 214','#d4cfc6',3)+LIMB('M60 234 L68 214','#d4cfc6',3)+`<circle cx="54" cy="224" r="6" fill="#d4cfc6"/>
+<path d="M94 240 L106 240 L108 256 L92 256Z" fill="#d4cfc6"/>`+LIMB('M95 242 L88 228','#d4cfc6',2.6)+LIMB('M105 242 L112 228','#d4cfc6',2.6)+`<circle cx="100" cy="234" r="5" fill="#d4cfc6"/>
+<path d="M138 232 L154 232 L156 252 L136 252Z" fill="#d4cfc6"/>`+LIMB('M140 234 L132 214','#d4cfc6',3)+LIMB('M152 234 L160 214','#d4cfc6',3)+`<circle cx="146" cy="224" r="6" fill="#d4cfc6"/>`,
+
+/* XXI 世界 */
+BG(C.Bl)+CLOUD(36,74,.85)+CLOUD(164,74,.85)+CLOUD(36,258,.85)+CLOUD(164,258,.85)+
+`<circle cx="36" cy="66" r="6" fill="${C.Y}"/><circle cx="164" cy="66" r="6" fill="${C.Gr}"/><circle cx="36" cy="250" r="6" fill="${C.Br}"/><circle cx="164" cy="250" r="6" fill="#d18b3a"/>
+<ellipse cx="100" cy="166" rx="44" ry="76" fill="none" stroke="${C.K}" stroke-width="12"/>
+<ellipse cx="100" cy="166" rx="44" ry="76" fill="none" stroke="${C.G}" stroke-width="9.5"/>
+<ellipse cx="100" cy="166" rx="44" ry="76" fill="none" stroke="${C.Gl}" stroke-width="4" stroke-dasharray="5 6"/>
+<path d="M92 84 L108 96 M108 84 L92 96 M92 236 L108 248 M108 236 L92 248" stroke="${C.R}" stroke-width="4"/>`+
+LIMB('M98 178 L95 214',C.S,4)+LIMB('M104 178 L116 196 L100 204',C.S,4)+
+`<path d="M94 132 Q100 128 106 132 L110 180 L90 180Z" fill="${C.S}"/>
+<path d="M92 134 Q122 150 98 170 Q84 188 110 200 L104 206 Q76 190 90 168 Q108 152 90 142Z" fill="${C.Pu}"/>`+
+LIMB('M94 136 L84 150',C.S,3)+LIMB('M106 136 L116 150',C.S,3)+
+`<line x1="82" y1="140" x2="86" y2="162" stroke="${C.Y}" stroke-width="2.6"/><line x1="118" y1="140" x2="114" y2="162" stroke="${C.Y}" stroke-width="2.6"/>`+
+H(100,122,7)+`<path d="M93 120 Q94 112 100 113 Q107 112 107 122 Q104 116 100 117 Q96 116 93 120Z" fill="${C.Y}"/>`
+];
+
+/* ================= 牌面組合 ================= */
+let uid=0;
+function cardFace(i){
+  const c=CARDS[i],id='clip'+(uid++);
+  return `<svg viewBox="0 0 200 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${c.n}">
+  <defs><clipPath id="${id}"><rect x="18" y="48" width="164" height="236"/></clipPath></defs>
+  <rect width="200" height="340" rx="10" fill="${C.P}"/>
+  <rect x="8" y="8" width="184" height="324" rx="6" fill="none" stroke="${C.K}" stroke-width="2"/>
+  <g clip-path="url(#${id})" stroke="${C.K}" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round">${SCENES[i]}</g>
+  <rect x="18" y="48" width="164" height="236" fill="none" stroke="${C.K}" stroke-width="1.6"/>
+  <text x="100" y="37" text-anchor="middle" font-family="${FONT}" font-size="19" fill="${C.K}" letter-spacing="2">${c.num}</text>
+  <rect x="18" y="292" width="164" height="32" fill="none" stroke="${C.K}" stroke-width="1"/>
+  <text x="100" y="310" text-anchor="middle" font-family="Noto Serif TC, serif" font-size="13.5" fill="${C.K}" letter-spacing="3">${c.n}</text>
+  <text x="100" y="320.5" text-anchor="middle" font-family="${FONT}" font-size="7.2" fill="${C.K}" letter-spacing="2">${c.en.toUpperCase()}</text>
+  </svg>`;
+}
+const BACK=(()=>{const g='#cfb37a';
+  const cres=`<path d="M86 74 A16 16 0 0 0 114 74 A12 12 0 0 1 86 74Z" fill="${g}"/>`;
+  return `<svg viewBox="0 0 200 340" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="340" rx="10" fill="#1c2431"/>
+  <rect x="8" y="8" width="184" height="324" rx="6" fill="none" stroke="${g}" stroke-width="1.6"/>
+  <rect x="15" y="15" width="170" height="310" rx="4" fill="none" stroke="${g}" stroke-width=".6"/>
+  <g fill="none" stroke="${g}" stroke-width=".9">
+    <circle cx="100" cy="170" r="46"/><circle cx="100" cy="170" r="38"/>
+    <rect x="74" y="144" width="52" height="52"/><rect x="74" y="144" width="52" height="52" transform="rotate(45 100 170)"/>
+    <line x1="100" y1="96" x2="100" y2="124" stroke-dasharray="2 3"/><line x1="100" y1="216" x2="100" y2="244" stroke-dasharray="2 3"/>
+    <line x1="30" y1="170" x2="54" y2="170" stroke-dasharray="2 3"/><line x1="146" y1="170" x2="170" y2="170" stroke-dasharray="2 3"/>
+  </g>
+  <circle cx="100" cy="170" r="11" fill="${g}"/>${STAR(100,170,20,8,.3,g)}<circle cx="100" cy="170" r="6" fill="#1c2431"/>
+  ${cres}<g transform="rotate(180 100 170)">${cres}</g>
+  ${[[32,32],[168,32],[32,308],[168,308]].map(([x,y])=>STAR(x,y,6,4,.3,g)).join('')}
+  </svg>`;})();
+
+/* ================= 牌義資料 ================= */
+const CARDS=[
+{n:'愚者',en:'The Fool',num:'0',kw:['新的開始、勇氣、自由','衝動、猶豫、需要準備'],
+ story:'一位年輕的旅人背著小小的行囊，手拈一朵白玫瑰，仰頭望著天空，一腳就要踏出懸崖邊緣。身旁的小白狗跳躍著，像在提醒，也像在為他歡呼。他的眼中沒有恐懼，只有對未知的好奇。',
+ mean:['愚者是所有旅程的起點，象徵純真、自由與全新的可能。它邀請你放下過多的擔心，相信生命會在你踏出第一步時，為你鋪好下一段路。','逆位的愚者，像是旅人在懸崖邊多停了一下。這不是退縮，而是提醒你：熱情很珍貴，但也值得配上一點準備與規劃，讓勇敢變得更踏實。'],
+ ess:['一份不計得失、勇於出發的純真','一股還沒準備好就想往前衝的急切'],
+ cat:[['一段新的心動可能正在靠近，放心地敞開自己吧。','用好奇心去學，新的方法會帶來意想不到的收穫。','勇敢嘗試新的機會，你比自己想的更有能力。','可以為新計畫做點小投資，但先留好安全墊。','用真誠的自己去認識人，緣分會自然發生。','新的旅程正在展開，帶著輕盈的心出發吧。'],
+      ['感情裡先別急著跳進去，多給彼此一點認識的時間。','先把基礎打穩，再衝刺會更踏實。','想改變的心很珍貴，只是需要多一點規劃。','這陣子花錢前停三秒，問問自己真的需要嗎。','說話前多想一下，溫柔能讓關係更穩。','不是不能出發，而是準備好再走會更安心。']]},
+{n:'魔術師',en:'The Magician',num:'I',kw:['創造、行動、善用資源','分心、缺乏自信、能量分散'],
+ story:'魔術師一手高舉權杖指向天空，一手指向大地，頭頂浮著代表無限的符號。桌上整齊擺著權杖、聖杯、寶劍與錢幣——四種元素齊備，象徵他所需要的一切，早已握在手中。',
+ mean:['魔術師代表「把想法變成現實」的力量。你擁有的能力與資源，比你以為的還要多；現在需要的，只是相信自己，然後開始行動。','逆位的魔術師，像是桌上的工具散落一地。你也許有很多想法，卻一時不知從何下手，或是對自己的能力產生了懷疑。先挑一件最重要的事專心完成，自信會慢慢回來。'],
+ ess:['相信自己能讓事情發生的行動力','想法很多、卻暫時找不到施力點的迷惘'],
+ cat:[['主動表達心意吧，你的真誠很有魅力。','你已經擁有需要的能力，現在就是開始的時候。','把點子化為行動，你能讓事情發生。','善用手邊資源，小小的巧思也能帶來收穫。','你的溝通能力會讓你被看見、被喜歡。','你手中握著所有工具，相信自己，開始吧。'],
+      ['不必假裝成別人，真實的你就值得被喜歡。','試著一次只專心做一件事，效率會回來的。','先整理優先順序，別讓自己被太多事情拉扯。','留意看起來太好的機會，穩穩來就好。','偶爾累了也沒關係，不需要時時表現完美。','你的能量有點分散，先把心收回來，照顧好自己。']]},
+{n:'女祭司',en:'The High Priestess',num:'II',kw:['直覺、內在智慧、靜心','忽略內心、資訊不明、焦慮'],
+ story:'女祭司靜坐在黑白兩根柱子之間，身後的帷幕繡滿石榴，腳邊躺著一彎新月。她懷中半掩著一卷經文——有些智慧，只會在安靜的時候向你展開。',
+ mean:['女祭司是直覺與內在智慧的守護者。她提醒你，答案不一定來自外界的聲音，而是藏在你內心深處那份安靜的「知道」裡。','逆位的女祭司，像是帷幕被外界的喧囂吹亂了。你可能聽了太多別人的意見，反而聽不見自己的聲音。找一段安靜的時間，和自己好好待在一起。'],
+ ess:['一份安靜而清明的直覺','被外界雜音淹沒、聽不見自己的心'],
+ cat:[['感情需要靜靜感受，你的直覺會告訴你答案。','安靜的環境最適合你，深度閱讀會有收穫。','先觀察、不急著表態，時機到了你自然知道。','理財上相信自己的判斷，低調穩健最好。','傾聽比說話更能拉近你們的距離。','答案其實已經在你心裡，給自己一段安靜的時間。'],
+      ['也許有些心事還沒說開，溫柔地問一問吧。','別被焦慮淹沒，先深呼吸，再一步步來。','資訊還不夠清楚，先多了解再做決定。','不確定的事先暫緩，等看清楚再行動。','你可能壓抑了自己的感受，試著說出來。','最近有點忽略內心的聲音，記得停下來聽聽自己。']]},
+{n:'皇后',en:'The Empress',num:'III',kw:['豐盛、滋養、溫柔','過度付出、忽略照顧自己'],
+ story:'皇后安坐在柔軟的軟墊上，頭戴星辰冠冕，身旁是成熟的麥田、蓊鬱的樹林與潺潺的流水。萬物在她身邊豐盛生長，一切都被溫柔地滋養著。',
+ mean:['皇后象徵豐盛、創造與無條件的愛。她代表你正處在一個能夠孕育美好的狀態——無論是一段關係、一項計畫，還是你自己，都正在慢慢開花結果。','逆位的皇后，像是把所有養分都給了別人，卻忘了澆灌自己。你可能付出太多而感到疲憊。請記得，照顧好自己，才有能力溫柔地照顧世界。'],
+ ess:['一份被愛滋養、豐盛生長的溫柔','不斷付出、卻忘了照顧自己的疲憊'],
+ cat:[['被愛與付出愛的能量都很豐沛，好好享受這份溫暖。','在舒服的狀態下學習，成果會自然開花。','你的用心會慢慢累積成肯定與回報。','財運溫和豐盛，也記得犒賞努力的自己。','你的溫柔讓身邊的人感到安心。','生命正在滋養你，允許自己接受美好。'],
+      ['愛別人之前，也記得好好愛自己。','休息不是偷懶，充好電才走得更遠。','別把所有事都扛在身上，學著請別人幫忙。','留意情緒性消費，你需要的可能是休息。','你付出很多，也值得被同樣溫柔地對待。','最近把自己放得太後面了，今天先照顧你自己。']]},
+{n:'皇帝',en:'The Emperor',num:'IV',kw:['穩定、秩序、責任','控制、僵化、壓力'],
+ story:'皇帝端坐在刻著公羊頭的石造王座上，一手握著生命之杖，一手托著寶球，身後是陡峭而堅定的山脈。他的神情沉穩，像一座讓人安心的山。',
+ mean:['皇帝代表秩序、責任與穩定的力量。他告訴你，只要建立清楚的規劃與界線，你就能為自己撐起一片安全的天空。','逆位的皇帝，像是把王座坐得太緊繃。你可能對自己要求太高，或想掌控每一個細節而感到壓力。試著放鬆肩膀，允許事情保有一點彈性。'],
+ ess:['穩穩站立、為自己負責的堅定','想把一切都握在手裡的緊繃'],
+ cat:[['穩定與承諾，是這段關係的力量。','建立規律的讀書計畫，你會越來越有把握。','你的可靠讓人信任，適合承擔更多責任。','有紀律的規劃會讓財務越來越穩。','你是大家可以依靠的人，這份力量很珍貴。','為生活建立一點秩序，安全感會慢慢回來。'],
+      ['放下一點掌控，讓對方也有空間靠近你。','計畫可以有彈性，不必對自己太嚴格。','壓力有點大，試著把標準放寬一點點。','不用把每一塊錢都算到緊繃，平衡最重要。','試著多聽聽別人的想法，關係會更柔軟。','你一直很努力撐著，偶爾放鬆也沒關係。']]},
+{n:'教皇',en:'The Hierophant',num:'V',kw:['指引、學習、信任的支持','打破框架、尋找自己的路'],
+ story:'教皇頭戴三重冠，舉起右手祝福，座前跪著兩位虔誠的學徒，腳邊交疊著兩把鑰匙——那是開啟智慧與傳承之門的鑰匙。',
+ mean:['教皇象徵學習、傳承與值得信任的指引。此刻向有經驗的人請益，或回到經過時間考驗的方法，會讓你走得更安心。','逆位的教皇，提醒你不必被既有的框架綁住。別人走過的路可以參考，但最適合你的那條路，也許需要你親自去開拓。'],
+ ess:['一份來自前人與信念的安定指引','想跳出框架、尋找自己道路的渴望'],
+ cat:[['用真誠與尊重經營，關係會穩穩地前進。','向老師或學長姐請教，會得到很好的指引。','找一位前輩學習，能讓你少走很多彎路。','依循穩健可靠的方法理財最安心。','在團體中你會找到歸屬感與支持。','不妨問問信任的人，你不需要獨自摸索。'],
+      ['你們的相處方式，不一定要和別人一樣。','適合你的學習方式，也許和大家不同。','可以試著用新的角度思考既有的做法。','別人的建議參考就好，最了解你的還是你。','不必勉強迎合，做自己也能被接納。','你正在找屬於自己的答案，這是很勇敢的事。']]},
+{n:'戀人',en:'The Lovers',num:'VI',kw:['連結、選擇、和諧','猶豫、價值觀差異'],
+ story:'天使在燦爛的太陽下張開雙翼，為下方的兩人送上祝福。兩人身後各有一棵樹——一棵燃著熱情的火焰，一棵結滿智慧的果實。他們站在花園裡，面對著一個關於心的選擇。',
+ mean:['戀人牌不只關於愛情，更關於「發自內心的選擇」與真誠的連結。當你依循自己真正重視的價值做決定，關係與方向都會變得和諧。','逆位的戀人，像是兩個人站得很近，心卻還沒對齊。你可能在選擇之間猶豫，或在關係中感到價值觀的落差。坦誠溝通，是重新靠近的開始。'],
+ ess:['一份心意相通、忠於自己的選擇','在兩條路之間猶豫的拉扯'],
+ cat:[['心與心正在靠近，這是一段美好的連結。','選擇真正喜歡的方向，學習會充滿動力。','與夥伴合作順利，你們的默契很好。','共同規劃或合作，可能帶來好的結果。','你會遇到很合得來、能說心事的人。','跟隨你的心做選擇，它會帶你到對的地方。'],
+      ['也許你們需要更多溝通，聊聊彼此真正的想法。','在選擇之間猶豫很正常，給自己一點時間。','合作中有些步調不一，坦白溝通會有幫助。','花錢前想想，它符合你真正重視的事嗎？','有些不同沒關係，尊重就能讓關係延續。','面對選擇有點糾結，先問問自己最在乎什麼。']]},
+{n:'戰車',en:'The Chariot',num:'VII',kw:['前進、決心、勝利','方向不定、急躁、力不從心'],
+ story:'一位身穿星辰鎧甲的戰士立於戰車之上，車前一黑一白兩隻人面獅身獸靜靜伏著。他沒有握著韁繩，單憑意志，就讓兩股相反的力量朝同一個方向前進。',
+ mean:['戰車象徵決心、行動與突破。只要目標清楚、意志堅定，你就能駕馭內心的矛盾，穩穩地朝想要的方向前進。','逆位的戰車，像是兩隻獸各自往不同方向拉扯。你也許有些急躁，或對方向感到迷惘。停下來重新確認目標，比盲目加速更重要。'],
+ ess:['目標清晰、一路向前的決心','想快卻使不上力的焦急'],
+ cat:[['主動一點，你的心意會被好好接住。','保持衝勁，你很有機會達成目標。','全力以赴的你，正在往好的方向前進。','目標明確地存錢，會比想像中更快達成。','你的行動力會帶動身邊的人一起向前。','方向已經清楚，帶著決心勇敢前進吧。'],
+      ['先別急著要結果，感情需要慢慢來。','衝太快有點累了吧？調整步伐不等於放棄。','方向有點模糊，停下來確認目標再出發。','避免衝動決定，慢一點反而更安全。','別太急著證明自己，關係需要時間。','有點用力過猛了，先休息一下再重新出發。']]},
+{n:'力量',en:'Strength',num:'VIII',kw:['溫柔的力量、耐心、勇氣','自我懷疑、情緒疲憊'],
+ story:'一位身著白衣的女子，溫柔地撫著獅子的頭，輕輕合上牠的嘴。她的頭頂浮著無限的符號，髮間與腰間繫著花環。她沒有用蠻力，卻讓猛獸甘心安靜下來。',
+ mean:['力量牌告訴你，真正的強大是溫柔、耐心與包容。當你以溫和的方式面對內心的恐懼與外在的難題，它們會一點一點被馴服。','逆位的力量，像是女子一時懷疑自己能否安撫獅子。你可能感到情緒疲憊或自我懷疑。請記得，即使現在覺得脆弱，那份溫柔的力量從未離開你。'],
+ ess:['以溫柔馴服恐懼的內在力量','有些疲憊、對自己失去信心的時刻'],
+ cat:[['用耐心與溫柔，就能化解感情裡的不安。','穩穩地堅持，你的努力一定會有成果。','你的韌性很強，困難都能溫柔地跨過。','耐心等待，穩定累積會帶來回報。','你的包容讓別人願意對你敞開心。','你比你以為的更堅強，溫柔就是你的力量。'],
+      ['不安的時候，記得你本來就值得被愛。','別因一次失誤否定自己，你已經很努力了。','情緒有點累了，允許自己慢下來。','對自己寬容一點，金錢的壓力會慢慢鬆開。','不需要一直忍耐，說出感受也是勇氣。','最近對自己有點懷疑，但你一直都很好。']]},
+{n:'隱者',en:'The Hermit',num:'IX',kw:['沉澱、內省、尋找答案','孤單、封閉自己'],
+ story:'一位披著灰色斗篷的老者獨自站在雪山之巔，一手拄著長杖，一手高舉燈籠，燈裡閃耀著一顆六芒星。他照亮的不只是自己腳下的路，也為後來的人指引方向。',
+ mean:['隱者代表沉澱、內省與獨處中的智慧。這是一個適合放慢腳步、向內探索的時刻，你所尋找的答案，會在安靜中慢慢浮現。','逆位的隱者，提醒你獨處與孤立只有一線之隔。如果你把自己關得太久，不妨試著走下山，讓身邊的人陪你一起提燈。'],
+ ess:['一段向內沉澱、尋找答案的安靜時光','把自己關得太久的孤單'],
+ cat:[['先好好了解，自己想要什麼樣的愛。','獨處的時光，最適合專心學習。','靜下心思考，你會找到真正想走的方向。','簡單生活，你會發現自己需要的其實不多。','和少數知心朋友深聊，會讓你充飽電。','這是適合沉澱的時刻，答案會在安靜中浮現。'],
+      ['別把自己關起來，你值得被靠近。','一個人卡住時，問問別人也很好。','有困難的話，試著向身邊的人求助。','財務煩惱別獨自承擔，找人聊聊會輕鬆些。','有點孤單的話，主動傳個訊息給朋友吧。','獨處很好，但也別忘了世界上有人在乎你。']]},
+{n:'命運之輪',en:'Wheel of Fortune',num:'X',kw:['轉機、好運、順流','低潮、時機未到'],
+ story:'巨大的命運之輪在雲端緩緩轉動，輪上刻著神秘的文字。四個角落的守護者靜靜注視，頂端的人面獅身獸穩坐不動——無論輪子如何轉，總有不變的智慧守在那裡。',
+ mean:['命運之輪象徵轉機、循環與好運的到來。生命正在轉向新的階段，保持開放的心，你會發現機會比想像中更靠近。','逆位的命運之輪，像是輪子暫時轉到了低處。但請記得，轉動從不停止，低潮只是循環的一部分。耐心等待，風向一定會改變。'],
+ ess:['一個正在轉動、悄悄靠近的轉機','暫時轉到低處、時機未到的等待'],
+ cat:[['緣分的齒輪正在轉動，好事可能突然發生。','運氣站在你這邊，努力會遇上好時機。','轉機出現了，留意身邊的新機會。','財運有好轉的趨勢，把握合適的機會。','會有新的人進入你的生活，帶來好的改變。','生命正在轉向好的方向，相信這份流動。'],
+      ['現在也許不是最好的時機，但不代表沒有可能。','暫時的低潮會過去，持續努力就好。','事情卡住只是暫時的，風向一定會改變。','這段時間保守一點，等待更好的時機。','關係起起伏伏很正常，別太責怪自己。','低潮是循環的一部分，天氣總會放晴。']]},
+{n:'正義',en:'Justice',num:'XI',kw:['公平、真誠、平衡','失衡、委屈感'],
+ story:'正義女神端坐於兩柱之間，右手高舉雙刃之劍，左手持著天秤。她的目光清澈而平靜，提醒世人：每一個選擇都有它的重量，也都會帶來相應的結果。',
+ mean:['正義牌象徵公平、真誠與因果。你過去的努力與誠實，會在此時得到公正的回應；面對選擇時，依循你心中的價值，就不會走偏。','逆位的正義，像是天秤稍微傾斜了。你也許感到委屈或不公平，或是生活某些部分失去了平衡。試著誠實面對自己的感受，並溫柔地說出你的需要。'],
+ ess:['誠實面對、問心無愧的清明','天秤傾斜、心中有些委屈的失衡'],
+ cat:[['真誠與平等的付出，讓感情更長久。','你付出的努力，會得到應有的成果。','你的表現會被公正地看見。','收支平衡，清楚的規劃帶來安心。','誠實面對彼此，關係會更穩固。','依照你的價值做決定，你會對自己問心無愧。'],
+      ['關係裡如果覺得不平衡，可以溫柔地提出來。','結果不如預期時，先別否定自己的努力。','覺得委屈的話，試著理性說出你的需求。','檢查一下收支，有些小地方需要調整。','試著站在對方角度想，也許會有新的理解。','生活有點失衡，慢慢找回自己的步調吧。']]},
+{n:'吊人',en:'The Hanged Man',num:'XII',kw:['換個角度、等待、放下','停滯、不甘心、過度犧牲'],
+ story:'一位男子倒吊在生命之樹上，雙手背在身後，神情卻出奇地平靜，頭頂甚至散發著光暈。他不是被懲罰，而是自願換一個角度，看見從未看過的世界。',
+ mean:['吊人象徵暫停、換位思考與放下。有時候，停下來不是落後，而是讓你從新的角度理解事情，找到原本看不見的答案。','逆位的吊人，像是在樹上掛得太久，卻忘了為什麼而停。你可能在一件事上卡住、不甘心放手，或為別人犧牲太多。是時候溫柔地問問自己：這份等待還值得嗎？'],
+ ess:['願意停下來、換個角度看世界的智慧','卡在原地、捨不得放手的停滯'],
+ cat:[['換個角度看這段關係，你會看見新的可能。','卡關時換個方法，會突然豁然開朗。','暫時的等待，是為了更好的時機。','現在適合觀望，不急著做決定。','放下一點堅持，關係反而會更輕鬆。','暫停不是失敗，是讓你看見不同風景的機會。'],
+      ['不必為了關係委屈自己，你的感受也很重要。','一直卡著時，先休息一下再回來看。','如果付出沒有被珍惜，可以重新思考方向。','別因為不甘心而繼續投入，適時停損也是智慧。','你不需要一直犧牲自己去配合別人。','有點卡住了，試著放下一些不屬於你的重擔。']]},
+{n:'死神',en:'Death',num:'XIII',kw:['結束與新生、轉變','抗拒改變、捨不得'],
+ story:'一面黑色旗幟在風中飄揚，旗上綻放著一朵白玫瑰。遠方兩座高塔之間，太陽正緩緩升起，河水靜靜流向遠方——結束與開始，原來一直並肩而行。',
+ mean:['死神牌並不代表真正的死亡，而是「轉變」。一個階段正在結束，為的是讓更適合你的新開始有空間誕生，就像毛毛蟲必須告別繭，才能成為蝴蝶。','逆位的死神，像是緊緊抓著已經枯萎的花不肯放。改變讓人不安，這很正常；但當你願意鬆開手，就會發現新的陽光早已在地平線上等你。'],
+ ess:['告別舊我、迎向新生的轉變','害怕改變、捨不得告別的不安'],
+ cat:[['一個階段的結束，是為了迎接更適合的開始。','告別舊習慣，新的學習方式會更適合你。','改變正在發生，它會帶你走向新的階段。','整理舊的花費習慣，財務會煥然一新。','有些關係自然淡去，也會有新的緣分到來。','就像毛毛蟲變成蝴蝶，轉變會讓你更美好。'],
+      ['捨不得放手很正常，給自己時間慢慢來。','舊方法不再有效時，可以試著做點改變。','害怕改變沒關係，一小步一小步就好。','有些習慣需要調整，不用一次到位。','慢慢接受關係的變化，你不需要強求。','改變讓人不安，但你已經準備得比想像中好。']]},
+{n:'節制',en:'Temperance',num:'XIV',kw:['平衡、調和、耐心','失衡、過度、急躁'],
+ story:'一位天使一腳踏在水中，一腳立於岸上，正將水在兩只杯子之間緩緩倒流，一滴也不灑出。遠方的小路蜿蜒通往山巔，山頂上懸著一圈金色的光。',
+ mean:['節制牌象徵平衡、調和與耐心。它告訴你，不必急，也不必走極端；用剛剛好的節奏調和生活中的各種元素，你會走向一條平穩而美好的路。','逆位的節制，像是杯中的水開始溢出。你可能在某些地方用力過度，或生活步調失衡。試著深呼吸，把節奏調慢，讓身心回到中間的位置。'],
+ ess:['不疾不徐、恰到好處的平衡','用力過猛、步調失衡的疲累'],
+ cat:[['剛剛好的距離，讓感情溫和而長久。','讀書與休息取得平衡，效率最好。','協調與溝通，能讓工作順利進行。','收支平衡，細水長流最安心。','你是能讓大家和諧相處的人。','慢慢來，比較快。生活正在找到平衡。'],
+      ['感情裡有點過度用力，試著放鬆一點。','熬夜硬撐，不如好好睡一覺。','事情太多了，記得把節奏調慢。','最近花費有點多，稍微收一收就好。','關係裡有點失衡，可以聊聊彼此的期待。','你最近有點累，先讓身心回到平衡吧。']]},
+{n:'惡魔',en:'The Devil',num:'XV',kw:['執著、誘惑、被束縛','掙脫束縛、重獲自由'],
+ story:'惡魔高坐在台座上，台前兩個人被鬆鬆的鎖鏈繫著。仔細看就會發現，那鎖鏈其實寬得可以自己取下——束縛他們的，往往是自己的執著與恐懼。',
+ mean:['惡魔牌象徵執著、誘惑與自我設下的限制。它溫柔地提醒你看看：有沒有什麼習慣、關係或想法，正在悄悄綁住你？覺察，就是解開鎖鏈的第一步。','逆位的惡魔，是鎖鏈正在鬆開的時刻。你開始看見自己的束縛，也慢慢找回主導權。這份掙脫需要勇氣，而你已經在路上了。'],
+ ess:['被某種執著悄悄牽絆的狀態','正在鬆開束縛、重獲自由的勇氣'],
+ cat:[['留意自己是否太執著，愛應該讓人感到自由。','小心被手機或讓人分心的事情綁住了。','別讓工作壓力綁住你，你可以設下界線。','留意衝動消費的誘惑，記得你的目標。','讓你不舒服的關係，你有權利拉開距離。','有些東西讓你放不下，覺察它就是改變的開始。'],
+      ['你正在放下讓你不快樂的執著。','擺脫壞習慣，你的專注力正在回來。','你開始找回主導權，不再被壓力牽著走。','戒掉不必要的花費，財務越來越自由。','你學會保護自己，這是很棒的成長。','束縛正在鬆開，你值得更輕盈的自己。']]},
+{n:'高塔',en:'The Tower',num:'XVI',kw:['突然的變化、打破、看見真相','有驚無險、慢慢重建'],
+ story:'一道閃電劈中了高聳的塔頂，金色的王冠被震落，火光從窗中竄出。看似崩毀的瞬間，卻也讓被困在塔裡的人，終於看見了外面真實的天空。',
+ mean:['高塔象徵突如其來的改變與真相的揭露。它雖然令人震撼，卻是在推倒建立在不穩基礎上的東西，讓你有機會重建一個更真實、更堅固的自己。','逆位的高塔，代表風暴已經過去，或衝擊比想像中來得溫和。你正在從變動中慢慢站起，一磚一瓦地重建，而這一次會更加穩固。'],
+ ess:['突然的震撼與看清真相的時刻','風暴過後、慢慢重建的復原'],
+ cat:[['突然的變化也許讓人不安，但會讓真心浮現。','計畫被打亂沒關係，重新整理後會更穩固。','意外的變動，可能是重新開始的契機。','留意突發支出，準備一點緊急預備金。','一些真相浮上檯面，讓你看清誰是真正的朋友。','舊的倒下了，才有空間蓋起更好的。'],
+      ['你們躲過了一場風暴，好好珍惜現在。','危機已經過去，慢慢把進度補回來就好。','變動的影響比想像中小，你能處理好的。','有驚無險，從中學到經驗就好。','關係正在修復中，給彼此一點時間。','最難的時候已經過去，你正在一點一點重建。']]},
+{n:'星星',en:'The Star',num:'XVII',kw:['希望、療癒、願望','失去信心、暫時看不見光'],
+ story:'夜空中閃耀著一顆巨大的八芒星，周圍環繞著七顆小星。一位女子跪在池畔，將一壺水倒回池中，另一壺灑向大地；樹梢上的小鳥輕聲歌唱——這是暴風雨後最寧靜的夜晚。',
+ mean:['星星是希望與療癒之牌。它出現在高塔之後，告訴你最難的時候已經過去。請繼續相信你的願望，宇宙正溫柔地回應你。','逆位的星星，像是夜空暫時被雲層遮住。你也許覺得失去了方向或信心。但星星從未消失，它只是在等雲散開，等你再次抬頭。'],
+ ess:['一份被溫柔照亮的希望','暫時看不見光、有些失落的心'],
+ cat:[['溫柔的希望正在發光，美好的愛值得等待。','保持信心，你的努力正一點點累積成光。','你的願景很美，朝著它前進吧。','財務慢慢好轉，未來值得期待。','你會被理解，也會被溫柔地接住。','願望正在被宇宙聽見，請繼續相信。'],
+      ['暫時失望沒關係，你的心依然值得被珍惜。','覺得沒希望的時候，先為自己做一件小事。','迷失方向時，回想你最初為什麼出發。','不安是暫時的，一步一步會慢慢好起來。','就算現在覺得孤單，也有人默默在乎你。','星星只是被雲遮住了，它從沒離開過。']]},
+{n:'月亮',en:'The Moon',num:'XVIII',kw:['不安、潛意識、模糊不明','迷霧散去、恐懼消解'],
+ story:'月光灑落在兩座塔之間的蜿蜒小路上，一隻狗與一隻狼對著月亮仰首，池中的小龍蝦正慢慢爬上岸。月色朦朧，一切都似真似幻。',
+ mean:['月亮象徵潛意識、不安與尚未明朗的狀況。現在的你可能感到迷惘或擔憂，但不必急著看清一切；跟著月光一步步走，路會慢慢浮現。','逆位的月亮，是迷霧正在散去的徵兆。那些讓你不安的想像，逐漸顯露出真實的樣貌——其實，沒有你想的那麼可怕。'],
+ ess:['一段在迷霧中摸索前行的不安','迷霧漸散、恐懼慢慢消融的釋然'],
+ cat:[['感情有些模糊不清，先照顧好自己的不安。','擔心是正常的，把焦慮寫下來會好一點。','情況還不明朗，別讓想像放大了恐懼。','不熟悉的投資先別碰，看清楚再說。','有些誤會可能存在，耐心溝通會讓事情清楚。','在迷霧中慢慢走沒關係，月光仍會為你照路。'],
+      ['心裡的疑惑漸漸解開，你們的關係更清晰了。','擔心的事情，其實沒有想像中可怕。','方向逐漸清楚，你可以更安心地前進。','財務上的不確定正在明朗化。','誤會解開了，你們的關係會更靠近。','恐懼正在消散，你正在走出迷霧。']]},
+{n:'太陽',en:'The Sun',num:'XIX',kw:['快樂、成功、溫暖','小小的陰霾、熱情稍減'],
+ story:'燦爛的太陽高掛天際，向日葵在牆邊盛開。一個孩子張開雙臂騎在白馬上，身後飄揚著紅色旗幟，臉上滿是毫無保留的笑容。',
+ mean:['太陽是塔羅中最明亮的牌之一，象徵快樂、成功與生命力。你的努力將被看見，溫暖與好消息正在向你走來，盡情享受這份光亮吧。','逆位的太陽，像是陽光暫時被薄雲遮住。好事依然存在，只是可能來得慢一些，或你一時沒有心情感受。給自己一點時間，光會回來的。'],
+ ess:['一份明亮溫暖、充滿希望的喜悅','熱情稍稍降溫、等待陽光再現的時刻'],
+ cat:[['溫暖又快樂的戀愛能量，好好享受吧！','好成績正在向你招手，繼續保持！','你會發光發熱，努力會被看見。','財運明亮，可以小小慶祝一下。','你的笑容會吸引很多好朋友。','陽光灑在你身上，美好的事正在發生。'],
+      ['小小的摩擦不影響彼此的心，笑一笑就好。','進步可能慢了點，但方向是對的。','暫時有點疲乏，找回讓你快樂的小事吧。','收穫可能比預期少一些，但依然是好的。','偶爾的不開心，別讓它遮住彼此的好。','太陽只是暫時被雲遮住，光一直都在。']]},
+{n:'審判',en:'Judgement',num:'XX',kw:['覺醒、重生、回應召喚','自我批評、遲疑'],
+ story:'天使在雲端吹響號角，號角上繫著繡有十字的旗幟。下方的人們從沉睡中甦醒，張開雙臂迎向天空——那是一聲召喚，喚醒每個人心中真正的自己。',
+ mean:['審判牌象徵覺醒、重生與回應內心的召喚。這是一個重新審視過去、原諒自己，然後勇敢邁向新階段的時刻。','逆位的審判，像是號角已經響起，你卻還在猶豫要不要回應。你可能對過去太過自責，或害怕做出改變。請記得，每一個當下，都是重新開始的機會。'],
+ ess:['聽見內心召喚、準備重生的覺醒','對過去仍有自責、遲遲不敢回應的猶豫'],
+ cat:[['重新審視這段關係，你會更清楚自己想要的。','回顧過去的錯誤，這次你會做得更好。','一個重要的機會在呼喚你，勇敢回應吧。','現在是重新檢視財務、做出改變的好時機。','和老朋友重新聯繫，可能會有溫暖的重逢。','你正在覺醒，迎向一個全新的自己。'],
+      ['別一直怪罪過去的自己，你已經在學習了。','對自己少一點批評，多一點鼓勵。','猶豫是正常的，先聽聽內心真正的聲音。','過去的決定不必一直後悔，從現在開始就好。','試著原諒別人，也原諒自己。','你對自己太嚴格了，請溫柔地接住現在的你。']]},
+{n:'世界',en:'The World',num:'XXI',kw:['完成、圓滿、整合','尚未完成、只差一點點'],
+ story:'一位舞者在月桂花環中央輕盈起舞，雙手各握一根權杖。花環的四角，守護者們靜靜見證——一段旅程走到了圓滿的終點，也即將成為下一段旅程的起點。',
+ mean:['世界牌象徵完成、圓滿與整合。你一路走來的努力，正在匯聚成一個完整的成果。好好慶祝自己，也為下一個新的開始做好準備。','逆位的世界，像是舞蹈還差最後一個轉身。你離目標已經很近了，只是還有一些細節需要收尾。別在最後放棄，圓滿就在不遠處。'],
+ ess:['一段旅程走向圓滿的成就','離終點只差一步的未竟之感'],
+ cat:[['關係走向圓滿，你們都在對的位置上。','一個階段即將完成，你做得很好。','目標達成，可以為自己感到驕傲了。','財務目標圓滿達成，好好享受成果吧。','你身邊的人際網絡溫暖又完整。','一段旅程圓滿完成，世界正在為你鼓掌。'],
+      ['還差一點點，再多一點耐心就好。','離終點不遠了，別在最後放棄。','把剩下的細節完成，就能看見成果。','目標快達成了，繼續穩穩地走。','關係還有一點點需要磨合。','只差最後一步，你已經走了好長一段路。']]}
+];
+
+/* ================= 能量判讀依據 =================
+   依傳統牌義把 22 張牌分成：p 明亮、n 中性、c 考驗。
+   正位：p=+2、n=+1、c=-1；逆位：p=0（稍弱）、n=-1（受阻）、c=+1（考驗緩和、回穩） */
+const TONECLASS=['n','p','n','p','n','n','p','p','p','n','p','n','n','c','p','c','c','p','c','p','n','p'];
+function score(d){const t=TONECLASS[d.id];return d.reversed?{p:0,n:-1,c:1}[t]:{p:2,n:1,c:-1}[t];}
+function elabel(d){const s=score(d);if(d.reversed&&TONECLASS[d.id]==='c')return '回穩';return {2:'明亮',1:'平穩',0:'稍弱','-1':'考驗'}[s];}
+/* 每張牌在問題中的「具體處境」：可接在「曾／（現在）／可能會」之後 */
+const SIT=[
+ ['站在一個新的起點，帶著好奇想嘗試新的事物','急著往前衝，卻還沒有準備好'],
+ ['擁有足夠的能力與資源，可以主動讓事情發生','有很多想法，卻不知道該從哪裡開始'],
+ ['需要安靜下來，相信自己的直覺','被外界的聲音干擾，聽不清楚自己真正的想法'],
+ ['處在被支持、穩定成長的狀態，努力慢慢開花結果','付出太多而感到疲憊，忘了照顧自己'],
+ ['用規劃和紀律，把事情穩穩掌握在手中','給自己太大的壓力，想掌控每一個細節'],
+ ['得到前輩、老師或可靠方法的幫助','覺得既有的方式不適合自己，想找新的路'],
+ ['面對一個發自內心的選擇，和身邊的人有良好的連結','在兩個選擇之間猶豫，或和別人的想法有落差'],
+ ['目標明確，充滿行動力地往前推進','方向不夠清楚，越急越使不上力'],
+ ['用耐心和溫柔，一點一點克服困難','對自己沒有信心，情緒上有些疲憊'],
+ ['需要一段獨處的時間，好好把事情想清楚','把自己封閉起來，獨自承擔太多'],
+ ['遇到轉機，事情開始往新的方向轉動','遇到時機不對、暫時卡住的低潮'],
+ ['得到公平的結果，努力有相應的回報','覺得不公平或失衡，心裡有些委屈'],
+ ['經歷一段暫停，需要換個角度看事情','卡在原地，捨不得放手或一直在等待'],
+ ['結束一個階段，迎來真正的改變','害怕改變，抓著已經不適合的東西不放'],
+ ['找到平衡，用剛剛好的步調前進','生活步調失衡，在某些地方用力過度'],
+ ['被某個習慣、執念或壓力牽絆住','開始擺脫束縛，找回自己的主導權'],
+ ['遇到突如其來的變化，因此看清事情的真相','從一場變動中慢慢恢復、重新整理'],
+ ['重新燃起希望，感受到被療癒','暫時失去信心，看不太到前方的光'],
+ ['對未知感到不安，事情還不夠明朗','慢慢走出迷惘，原本擔心的事逐漸清楚'],
+ ['感受到快樂與成就，努力被看見','遇到好事稍微延遲，熱情有點降溫'],
+ ['迎來重新開始的機會，聽見內心真正的聲音','對過去的自己太嚴格，遲遲不敢做決定'],
+ ['完成一個階段，迎來圓滿的成果','離目標只差一點，還有些細節沒完成']
+];
+const PREFIX=['過去，你曾','現在的你，','接下來，你可能會'];
+const LEVELS=['很有希望','穩定向好','還在變化中','先放慢腳步'];
+const VERDICT={
+ l:['這段感情的走勢很好，兩人的心正在靠近，可以放心地多表達一點心意。','感情整體往好的方向走，只是還需要一些時間和溝通，慢慢來會越來越穩。','這段感情還在變化中，結果還沒定下來，關鍵在於你們接下來怎麼溝通。','現在不是逼自己要答案的時候，先照顧好自己的心情，感情才有空間慢慢長出來。'],
+ s:['這次的學習走勢很好，照著現在的節奏準備，很有機會得到滿意的結果。','整體是順利的，但有一兩個地方還需要加強，提早補起來會更安心。','結果還掌握在你手上，接下來的準備方式影響很大，現在調整還來得及。','最近的你可能有點累或卡住，先把狀態調回來，再衝刺效果會更好。'],
+ w:['工作上的走勢很好，你的努力會被看見，可以大膽爭取機會。','整體方向是對的，只是需要多一點耐心，穩穩累積就會有成果。','事情還在變動中，先多觀察、蒐集資訊，再做決定會比較好。','現在先別急著做大決定，給自己一點時間整理想法，時機會更清楚。'],
+ m:['財務的走勢明亮，只要維持好的習慣，會有不錯的收穫。','整體穩定，但花錢和規劃上還有可以調整的地方，細水長流最安心。','財務狀況還在變化，保守一點、先看清楚，比急著行動更好。','這段時間適合守住現有的，先別冒險，把基礎顧好就是最好的策略。'],
+ p:['人際關係的走勢很溫暖，你會被理解，也會遇到願意支持你的人。','關係整體是好的，只是有些小地方需要多一點溝通和體諒。','這段關係還在磨合中，真誠地說出你的感受，會讓情況更明朗。','先別勉強自己配合每個人，照顧好自己的感受，關係才能長久。'],
+ g:['整體運勢很明亮，你正走在對的路上，放心地往前吧。','整體往好的方向走，只要保持耐心，事情會一步步展開。','現在是一個轉換期，很多事還在成形，你的選擇會影響接下來的方向。','最近適合放慢腳步、休息與整理，等能量回來，再出發會更順。']
+};
+
+/* ================= 問題分類與牌位 ================= */
+const CATS={
+  l:{name:'愛情',topic:'感情',words:['喜歡','愛','感情','戀','對象','告白','分手','曖昧','男友','女友','男朋友','女朋友','交往','復合','另一半','暗戀','桃花','結婚','伴侶']},
+  s:{name:'學業',topic:'學業',words:['考','成績','讀書','學','報告','作業','升學','課','論文','分數','老師','畢業','期中','期末','學測','研究所','留學']},
+  w:{name:'工作',topic:'工作',words:['工作','面試','主管','老闆','轉職','實習','公司','升遷','職','同事','創業','加薪','打工','專案','離職']},
+  m:{name:'財運',topic:'財務',words:['錢','財','投資','存款','花費','收入','股票','薪水','理財','買','賺','債','中獎','經濟']},
+  p:{name:'人際',topic:'人際關係',words:['朋友','家人','同學','相處','人際','爸','媽','父母','室友','吵架','社團','團體','關係','兄弟','姊妹']},
+  g:{name:'整體運勢',topic:'人生方向',words:[]}
+};
+const CAT_INDEX={l:0,s:1,w:2,m:3,p:4,g:5};
+function detectCategory(q){let best='g',score=0;
+  for(const k of ['l','s','w','m','p']){const s=CATS[k].words.filter(w=>q.includes(w)).length;if(s>score){best=k;score=s;}}
+  return best;}
+const POS=[
+  {name:'過去',roman:'I',frame:['落在「過去」的位置，它描繪的是帶你走到今天的那段經歷。','以逆位落在「過去」，它輕聲提醒你，過去有些感受或許還沒被好好消化。'],
+   reflect:'回想看看：這段經歷，曾經教會你什麼？'},
+  {name:'現在',roman:'II',frame:['出現在「現在」的位置，說明這正是你眼下的課題，也是你此刻擁有的力量。','以逆位出現在「現在」，像是在溫柔地告訴你：眼前的卡關，需要被你好好看見。'],
+   reflect:'此刻不妨問問自己：我現在最需要的是什麼？'},
+  {name:'未來',roman:'III',frame:['作為「未來」之牌，它指向一個正在靠近你的可能。','以逆位出現在「未來」，它不是預告壞事，而是提前為你點亮一盞小燈，讓你知道哪裡需要放慢腳步。'],
+   reflect:'帶著這張牌的提醒，為明天做一件小小的準備吧。'}
+];
+const TONE=[
+  '三張牌都以逆位出現，像是宇宙輕輕按下了暫停鍵。這不是壞兆頭，而是一個向內看的時機——不急著得到答案，先好好陪伴此刻的自己。',
+  '牌面中逆位較多，這並不代表結果不好，而是在提醒你：最近的你可能有些疲憊、有些緊繃。先照顧好自己的心，路才會走得更穩。',
+  '牌面多數為正位，整體的流向溫和而正向。那一張逆位的牌不是阻礙，而是一個需要你多停留一下、多給自己一點溫柔的地方。',
+  '三張牌都是正位，能量像清晨的光一樣順暢流動。你正走在與內心一致的道路上，只要保持現在的步調，事情會自然地朝好的方向展開。'
+];
+const QUOTES=['不論結果如何，願意面對問題的你，已經很勇敢了。','慢慢來也沒關係，花開有它自己的時間。','你不需要完美，你只需要做自己。',
+  '今天的你，已經比昨天更靠近答案了。','記得好好吃飯、好好睡覺，宇宙會照顧認真生活的人。','所有經歷都不會白費，它們都在讓你成為更好的自己。','對自己溫柔一點，你值得被好好對待。'];
+const EXAMPLES=['我這次的期中考會順利嗎？','我和他的感情會怎麼發展？','我適合換一份新工作嗎？','最近的我需要注意什麼？'];
+
+/* ================= 互動流程 ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let question='',category='g',deck=[],picked=[],flipped=0,picks=[],fanOpen=false;
+
+function setStep(n){[...$('steps').children].forEach((li,i)=>li.classList.toggle('on',i<=n));}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+EXAMPLES.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;
+  b.onclick=()=>{$('question').value=t;$('ask-hint').textContent='';};$('chips').appendChild(b);});
+
+$('btn-start').onclick=()=>{
+  question=$('question').value.trim();
+  if(!question){$('ask-hint').textContent='先在心中想好你的問題，再把它寫下來吧';return;}
+  category=detectCategory(question);
+  startDraw();
+};
+
+function startDraw(){
+  picked=[];flipped=0;fanOpen=false;
+  deck=shuffle(CARDS.map((_,i)=>({id:i,reversed:Math.random()<.5})));
+  $('screen-ask').classList.remove('active');$('screen-draw').classList.add('active');
+  setStep(1);
+  $('q-show').textContent='「'+question+'」';
+  $('readings').innerHTML='';
+  $('tip').textContent='正在為你洗牌，請一邊在心中默念你的問題……';
+  const fan=$('fan');fan.innerHTML='';fan.className='fan shuffling';fan.style.display='block';
+  picks=deck.map(d=>{const el=document.createElement('div');el.className='pick';
+    el.innerHTML=`<div class="pick-inner">${BACK}</div>`;el.onclick=()=>pickCard(d,el);fan.appendChild(el);return el;});
+  layoutFan(false);
+  $('slots').innerHTML=POS.map((p,i)=>`<div class="slot"><div class="lab">${p.roman}<b>${p.name}</b></div><div class="frame" id="slot-${i}"></div><div class="orient" id="orient-${i}"></div></div>`).join('');
+  setTimeout(()=>{fan.classList.remove('shuffling');fanOpen=true;layoutFan(true);
+    setTimeout(()=>{fan.classList.add('ready');$('tip').textContent='憑直覺選出三張牌，它們會依序放入「過去・現在・未來」';},700);},1800);
+}
+
+function layoutFan(open){
+  const fan=$('fan'),W=fan.clientWidth,n=picks.length,small=W<560;
+  const cw=small?44:66,ch=cw*1.7,maxA=small?38:30,rad=maxA*Math.PI/180;
+  const R=Math.min(640,(W/2-cw/2-6)/Math.sin(rad));
+  fan.style.height=(open?ch+R*(1-Math.cos(rad))+44:ch+44)+'px';
+  picks.forEach((el,i)=>{
+    const a=open?-maxA+2*maxA*i/(n-1):0;
+    Object.assign(el.style,{width:cw+'px',height:ch+'px',left:(W/2-cw/2)+'px',top:'28px',
+      transformOrigin:`50% ${R}px`,transitionDelay:open?(i*20)+'ms':'0ms',transform:`rotate(${a}deg)`});
+  });
+}
+window.addEventListener('resize',()=>{if(picks.length)layoutFan(fanOpen);});
+
+function pickCard(d,el){
+  if(!$('fan').classList.contains('ready')||picked.length>=3)return;
+  el.style.transitionDelay='0ms';el.classList.add('taken');
+  const idx=picked.length;picked.push(d);
+  const slot=$('slot-'+idx);slot.classList.add('filled');
+  slot.innerHTML=`<div class="flip" id="flip-${idx}"><div class="side">${BACK}</div><div class="side front ${d.reversed?'rev':''}">${cardFace(d.id)}</div></div>`;
+  $('flip-'+idx).onclick=()=>flipCard(idx);
+  if(picked.length<3){$('tip').textContent=`已選 ${picked.length} 張，再選 ${3-picked.length} 張`;return;}
+  const fan=$('fan');fan.classList.remove('ready');fan.classList.add('gone');
+  setTimeout(()=>{fan.style.display='none';},500);
+  setStep(2);$('tip').textContent='深呼吸，從「過去」開始，依序點擊牌卡翻開';
+}
+
+function flipCard(idx){
+  if(picked.length<3)return;
+  const f=$('flip-'+idx);if(f.classList.contains('flipped'))return;
+  if(idx!==flipped){$('tip').textContent=`請先翻開「${POS[flipped].name}」的牌`;return;}
+  f.classList.add('flipped');flipped++;
+  $('orient-'+idx).textContent=picked[idx].reversed?'逆位':'正位';
+  $('tip').textContent=flipped<3?`繼續翻開「${POS[flipped].name}」的牌`:'';
+  setTimeout(()=>showReading(idx),800);
+}
+
+function showReading(idx){
+  const d=picked[idx],c=CARDS[d.id],o=d.reversed?1:0,box=$('readings');
+  if(idx===0){setStep(3);box.insertAdjacentHTML('beforeend',`<div class="cat">問題類型　<b>${CATS[category].name}</b></div>`);}
+  box.insertAdjacentHTML('beforeend',`
+    <article class="reading">
+      <div class="thumb ${o?'rev':''}">${cardFace(d.id)}</div>
+      <div>
+        <div class="pos">${POS[idx].roman} · ${POS[idx].name}</div>
+        <h3>${c.n}<span class="en">${c.en}</span><span class="tag">${o?'逆位':'正位'}</span><span class="energy">能量・${elabel(d)}</span></h3>
+        <div class="kw">關鍵字：${c.kw[o]}</div>
+        <p class="story">${c.story}</p>
+        <p>${c.mean[o]}</p>
+        <div class="inq"><b>放在你的問題裡</b>${PREFIX[idx]}${SIT[d.id][o]}。${c.cat[o][CAT_INDEX[category]]}</div>
+      </div>
+    </article>`);
+  box.lastElementChild.scrollIntoView({behavior:'smooth',block:'start'});
+  if(idx===2)setTimeout(showSummary,1400);
+}
+
+function showSummary(){
+  const ci=CAT_INDEX[category],sc=picked.map(score),[sp,sn,sf]=sc;
+  const total=sp*.5+sn*1+sf*1.5;
+  const lvl=total>=3.5?0:total>=1.5?1:total>=-.5?2:3;
+  const quote=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  const why=picked.map((d,i)=>{const c=CARDS[d.id],o=d.reversed?1:0;
+    return `<li><b>${POS[i].roman}・${POS[i].name}｜${c.n}・${o?'逆位':'正位'}（能量${elabel(d)}）</b>${PREFIX[i]}${SIT[d.id][o]}。</li>`;}).join('');
+  const t1=sn>sp?'比起過去，你現在的狀態已經好轉了，代表你一路的調整是有用的。':sn<sp?'比起過去，現在的你可能辛苦一些，這是正常的起伏，不代表走錯路。':'從過去到現在，狀況大致延續，你一直用相似的方式面對這件事。';
+  const t2=sf>sn?'而從現在到未來，能量是往上走的——眼前的狀況會慢慢好轉。':sf<sn?(sf>0?'未來牌的能量比現在略低，但仍是正向的，提醒你別因為現在順利就鬆懈。':'未來牌的能量比現在低一些，這不是壞消息，而是提前提醒你：接下來需要多一點耐心與準備。'):(sf>0?'現在到未來的能量都很穩定，維持目前的方向就好。':'現在到未來的能量偏低而平穩，表示這件事需要時間，不會一下子改變。');
+  const Y=s=>70-(s+1)*16.7, X=[50,180,310];
+  const pts=sc.map((s,i)=>`${X[i]},${f(Y(s))}`).join(' ');
+  const chart=`<svg viewBox="0 0 360 104" role="img" aria-label="能量走勢">
+    <line x1="30" y1="${f(Y(0))}" x2="330" y2="${f(Y(0))}" stroke="rgba(207,179,122,.18)" stroke-dasharray="3 4"/>
+    <polyline points="${pts}" fill="none" stroke="#cfb37a" stroke-width="1.6"/>
+    ${sc.map((s,i)=>`<circle cx="${X[i]}" cy="${f(Y(s))}" r="4.5" fill="#0e1014" stroke="#e8d7aa" stroke-width="1.6"/>
+      <text x="${X[i]}" y="98" text-anchor="middle" font-size="12" fill="#8c877d" font-family="Noto Serif TC,serif" letter-spacing="2">${POS[i].name}・${elabel(picked[i])}</text>`).join('')}
+  </svg>`;
+  const todo=[...new Set([CARDS[picked[2].id].cat[picked[2].reversed?1:0][ci],CARDS[picked[1].id].cat[picked[1].reversed?1:0][ci]])];
+  $('readings').insertAdjacentHTML('beforeend',`
+    <section class="summary">
+      <h3>綜合解讀</h3>
+      <div class="sub">a reading for you</div>
+      <div class="verdict">
+        <span class="sec-title">關於「${esc(question)}」</span>
+        <div class="meter">${[3,2,1,0].map(k=>`<i class="${k>=lvl?'on':''}"></i>`).join('')}</div>
+        <div class="lvl">${LEVELS[lvl]}</div>
+        <p>${VERDICT[category][lvl]}</p>
+      </div>
+      <div class="sec"><span class="sec-title">為什麼這樣說</span><ul class="why">${why}</ul></div>
+      <div class="sec flow"><span class="sec-title">三張牌的能量走勢</span>${chart}<p>${t1}${t2}</p></div>
+      <div class="sec"><span class="sec-title">你可以這樣做</span><ol class="todo">${todo.map(t=>`<li>${t}</li>`).join('')}</ol></div>
+      <p class="method">判讀方式：每張牌依傳統牌義分為明亮、中性、考驗三類，再依正逆位調整能量（例如高塔正位是考驗，逆位則代表風暴過後的回穩）。三個位置中，「未來」牌影響最大、「現在」次之、「過去」最小，綜合後得出上方的傾向。塔羅提供的是看事情的角度，而不是注定的結果。</p>
+      <p class="quote">「${quote}」</p>
+      <div class="again"><button class="btn" id="btn-again">再占卜一次</button></div>
+    </section>`);
+  $('btn-again').onclick=()=>{
+    $('screen-draw').classList.remove('active');$('screen-ask').classList.add('active');
+    $('question').value='';picks=[];setStep(0);window.scrollTo({top:0,behavior:'smooth'});
+  };
+  $('readings').lastElementChild.scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
